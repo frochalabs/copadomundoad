@@ -40,8 +40,8 @@ export default function Home() {
   return (
     <main className="min-h-screen relative overflow-hidden bg-[#051020]">
       {/* Dynamic Background (Gradient Mesh) */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-green-500 rounded-full blur-[120px] opacity-10 pointer-events-none -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute top-[20%] right-0 w-[400px] h-[400px] bg-yellow-500 rounded-full blur-[120px] opacity-[0.12] pointer-events-none translate-x-1/3"></div>
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-green-500 rounded-full blur-[120px] opacity-5 pointer-events-none -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute top-[20%] right-0 w-[400px] h-[400px] bg-yellow-500 rounded-full blur-[120px] opacity-[0.05] pointer-events-none translate-x-1/3"></div>
 
       <div className="relative z-10 w-full p-6 md:p-12 max-w-6xl mx-auto flex flex-col items-center">
         {/* Header Section with Framer Motion */}
@@ -51,25 +51,24 @@ export default function Home() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="w-full text-center mb-12 mt-8 md:mt-16 flex flex-col items-center gap-8"
         >
-          {/* Logo AD Promotora */}
-          <div className="relative flex items-center justify-center mb-2">
-            <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(6,182,212,0.20)_0%,transparent_70%)] rounded-full scale-150"></div>
-            <img
-              src="https://adpromotora.com.br/src/img/logos/AD.png"
-              alt="AD Promotora"
-              className="relative z-10 h-16 md:h-20 object-contain brightness-0 invert opacity-75 drop-shadow-[0_0_10px_rgba(255,255,255,0.15)] transition-all hover:opacity-100"
-            />
-          </div>
+          <div className="flex flex-col items-center gap-2">
+            {/* Logo AD Promotora */}
+            <div className="flex items-center justify-center">
+              <img
+                src="https://adpromotora.com.br/src/img/logos/AD.png"
+                alt="AD Promotora"
+                className="h-16 md:h-20 object-contain brightness-0 invert opacity-50 transition-all hover:opacity-80"
+              />
+            </div>
 
-          {/* Tag Glassmorphism */}
-          <div className="bg-white/[0.05] border border-white/10 backdrop-blur-[10px] rounded-full px-5 py-2 inline-flex items-center justify-center">
-            <span className="text-[0.75rem] text-slate-100 font-semibold uppercase tracking-[0.15em]">
+            {/* Subtitle / Tag */}
+            <span className="text-[0.75rem] text-white/40 font-medium uppercase tracking-[0.2em]">
               Evento Exclusivo
             </span>
           </div>
 
           {/* Title and Subtitle Container */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 mt-4 md:mt-8">
             <h1 className="text-5xl md:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] to-[#FBBF24]">
               VAMOS BRASIL
             </h1>
@@ -106,9 +105,31 @@ export default function Home() {
                 </button>
               </div>
             </form>
-            <p className="text-left text-xs text-slate-500 ml-1">
-              &gt; Exemplo de busca alternativa: joaosilva, maria123
-            </p>
+            {!searchedUser && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-left"
+              >
+                <div className="bg-blue-500/20 p-2 rounded-full shrink-0">
+                  <AlertCircle className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-medium text-blue-200 mb-1">Ainda não enviou seus palpites?</span>
+                  <p className="text-blue-300/80 mb-2">
+                    Eles só aparecerão aqui após você preencher o formulário oficial.
+                  </p>
+                  <a 
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSf_kV497Aonbzxo0-SVJun97lO0CkqvZVSzVDxiTB8vjBCBJg/viewform?usp=dialog" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[#10B981] hover:text-[#34d399] font-semibold transition-colors w-fit"
+                  >
+                    Acessar Formulário <ArrowRight className="h-4 w-4" />
+                  </a>
+                </div>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 
