@@ -14,14 +14,14 @@ export interface ApiResponse {
 }
 
 export async function fetchUserPalpites(username: string): Promise<ApiResponse> {
-  const res = await fetch(`http://localhost:3000/api/palpites/${username}`);
-  
+  const res = await fetch(`https://copadomundoad.onrender.com/api/palpites/${username}`);
+
   if (!res.ok) {
     if (res.status === 404) {
       throw new Error('Usuário não encontrado');
     }
     throw new Error('Erro ao buscar palpites');
   }
-  
+
   return res.json();
 }
