@@ -47,33 +47,54 @@ app.post('/api/jogos/seed', async (req, res) => {
 
 // Endpoint para receber os palpites consolidados do n8n
 app.post('/api/palpites', async (req, res) => {
-  const { email, palpites } = req.body; // palpites = [{ jogoId: 1006, palpiteA: 2, palpiteB: 1 }, ...]
+  const { email, palpites } = req.body;
 
   if (!email || !Array.isArray(palpites)) {
     return res.status(400).json({ error: 'Dados incompletos.' });
   }
 
-  // Extrai o nome antes do @ para usar como rota no frontend (/username)
   const username = email.split('@')[0].toLowerCase();
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
 
-    const query = `
+    // 1. Mapeia apenas os IDs dos jogos que vieram na requisição
+    const jogoIds = palpites.map(p => p.jogoId);
+
+    // 2. Verifica no banco se esse email já tem registro para algum desses jogos
+    const checkQuery = `
+      SELECT jogo_id FROM palpites 
+      WHERE email = $1 AND jogo_id = ANY($2::int[])
+    `;
+    const { rows: jogosJaRegistrados } = await client.query(checkQuery, [email, jogoIds]);
+
+    // 3. Se o banco retornar alguma linha, significa que ele já palpitou em alguns (ou todos) esses jogos
+    if (jogosJaRegistrados.length > 0) {
+      await client.query('ROLLBACK'); // Aborta a transação
+
+      const idsDuplicados = jogosJaRegistrados.map(j => j.jogo_id);
+
+      // Retorna Status 409 (Conflict) informando exatamente quais jogos deram problema
+      return res.status(409).json({
+        error: 'Palpites já registrados.',
+        message: `O usuário ${username} já registrou palpites para os seguintes jogos: ${idsDuplicados.join(', ')}.`
+      });
+    }
+
+    // 4. Se passou pela checagem acima, é porque são jogos novos (ex: Rodada 2). Fazemos o INSERT simples.
+    const insertQuery = `
       INSERT INTO palpites (email, username, jogo_id, palpite_a, palpite_b)
       VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (email, jogo_id) DO UPDATE SET 
-        palpite_a = EXCLUDED.palpite_a,
-        palpite_b = EXCLUDED.palpite_b;
     `;
 
     for (const p of palpites) {
-      await client.query(query, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
+      await client.query(insertQuery, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
     }
 
     await client.query('COMMIT');
     res.status(200).json({ message: `Palpites de ${username} registrados com sucesso!` });
+
   } catch (error) {
     await client.query('ROLLBACK');
     console.error(error);
