@@ -8,8 +8,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard de Bolão",
-  description: "Acompanhe seus palpites com estilo",
+  title: "Bolão AD Promotora",
+  description: "Acompanhe seus palpites com a AD Promotora",
+  icons: {
+    icon: "https://adpromotora.com.br/src/img/logos/AD.png"
+  }
 };
 
 export default function RootLayout({

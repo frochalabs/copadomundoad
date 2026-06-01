@@ -16,7 +16,7 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
   let pointsIcon = <X size={14} className="mr-1" />;
 
   if (palpite.pontos_ganhos && palpite.pontos_ganhos > 0) {
-    badgeStyle = "bg-[#79f7fa]/10 text-[#79f7fa] border-l border-b border-[#79f7fa]/30 shadow-[0_0_10px_rgba(121,247,250,0.5)]";
+    badgeStyle = "bg-[#10B981]/10 text-[#10B981] border-l border-b border-[#10B981]/30 shadow-[0_0_10px_rgba(16,185,129,0.3)]";
     pointsIcon = palpite.pontos_ganhos === 3 ? <Trophy size={14} className="mr-1" /> : <Check size={14} className="mr-1" />;
   }
 
@@ -34,7 +34,7 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
-      className={`relative rounded-xl border p-5 flex flex-col items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:border-[#79f7fa]/30 ${containerStyle}`}
+      className={`relative rounded-xl border p-5 flex flex-col items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:border-[#10B981]/30 ${containerStyle}`}
     >
       {/* Badge for Points */}
       {palpite.pontos_ganhos !== null && (
@@ -73,10 +73,17 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
         </div>
       </div>
       
-      {/* Footer Info (optional, can be used for extra status) */}
+      {/* Footer Info / Previsão */}
       {palpite.pontos_ganhos === null && (
-        <div className="mt-4 pt-4 border-t border-white/5 w-full text-center text-xs text-slate-600 font-mono uppercase tracking-widest">
-          Aguardando Resultado
+        <div className="mt-6 w-full flex flex-col gap-2">
+          <div className="w-full flex items-center justify-between text-[11px] sm:text-xs font-semibold px-3 py-2 bg-[#10B981]/10 text-[#10B981] rounded border border-[#10B981]/20">
+            <span className="flex items-center gap-1.5">🟢 5 pts</span>
+            <span className="text-[#10B981]/70 font-medium">se exato</span>
+          </div>
+          <div className="w-full flex items-center justify-between text-[11px] sm:text-xs font-semibold px-3 py-2 bg-blue-500/10 text-blue-400 rounded border border-blue-500/20">
+            <span className="flex items-center gap-1.5">🔵 3 pts</span>
+            <span className="text-blue-400/70 font-medium">se acertar vencedor</span>
+          </div>
         </div>
       )}
     </motion.div>
