@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mysql-bolao:
+    image: mysql:8.0
+    container_name: db-bolao-copa
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: bolao_empresa
+      MYSQL_USER: dev_user
+      MYSQL_PASSWORD: dev_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_bolao_data:/var/lib/mysql
+
+volumes:
+  mysql_bolao_data:
