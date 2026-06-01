@@ -104,13 +104,6 @@ export default function Home() {
                 >
                   {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Buscar"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setUsername('fabiano.sales'); executeSearch('fabiano.sales'); }}
-                  className="flex items-center justify-center px-[16px] py-[10px] rounded-[5px] bg-white/10 hover:bg-white/20 text-white font-medium text-sm transition-all border border-white/10"
-                >
-                  Meus palpites
-                </button>
               </div>
             </form>
             <p className="text-left text-xs text-slate-500 ml-1">
