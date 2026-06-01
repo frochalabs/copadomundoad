@@ -20,12 +20,12 @@ app.post('/api/jogos/seed', async (req, res) => {
 
   const query = `
     INSERT INTO jogos (id, time_a, time_b, data_jogo, status) 
-    VALUES (?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE 
-      time_a = VALUES(time_a), 
-      time_b = VALUES(time_b), 
-      data_jogo = VALUES(data_jogo),
-      status = VALUES(status)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (id) DO UPDATE SET 
+      time_a = EXCLUDED.time_a, 
+      time_b = EXCLUDED.time_b, 
+      data_jogo = EXCLUDED.data_jogo,
+      status = EXCLUDED.status
   `;
 
   try {
@@ -55,31 +55,31 @@ app.post('/api/palpites', async (req, res) => {
 
   // Extrai o nome antes do @ para usar como rota no frontend (/username)
   const username = email.split('@')[0].toLowerCase();
-  const connection = await pool.getConnection();
+  const client = await pool.connect();
 
   try {
-    await connection.beginTransaction();
+    await client.query('BEGIN');
 
     const query = `
       INSERT INTO palpites (email, username, jogo_id, palpite_a, palpite_b)
-      VALUES (?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE 
-        palpite_a = VALUES(palpite_a),
-        palpite_b = VALUES(palpite_b);
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (email, jogo_id) DO UPDATE SET 
+        palpite_a = EXCLUDED.palpite_a,
+        palpite_b = EXCLUDED.palpite_b;
     `;
 
     for (const p of palpites) {
-      await connection.query(query, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
+      await client.query(query, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
     }
 
-    await connection.commit();
+    await client.query('COMMIT');
     res.status(200).json({ message: `Palpites de ${username} registrados com sucesso!` });
   } catch (error) {
-    await connection.rollback();
+    await client.query('ROLLBACK');
     console.error(error);
     res.status(500).json({ error: 'Erro ao salvar palpites.' });
   } finally {
-    connection.release();
+    client.release();
   }
 });
 
@@ -99,11 +99,11 @@ app.get('/api/palpites/:username', async (req, res) => {
         j.data_jogo
       FROM palpites p
       JOIN jogos j ON p.jogo_id = j.id
-      WHERE p.username = ?
+      WHERE p.username = $1
       ORDER BY j.data_jogo ASC;
     `;
 
-    const [resultados] = await pool.query(query, [username.toLowerCase()]);
+    const { rows: resultados } = await pool.query(query, [username.toLowerCase()]);
 
     if (resultados.length === 0) {
       return res.status(404).json({ message: 'Nenhum palpite encontrado para este usuário.' });

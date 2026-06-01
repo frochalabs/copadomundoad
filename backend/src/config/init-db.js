@@ -10,7 +10,7 @@ async function initDatabase() {
         time_b VARCHAR(100) NOT NULL,
         gols_a INT DEFAULT NULL,
         gols_b INT DEFAULT NULL,
-        data_jogo DATETIME NOT NULL,
+        data_jogo TIMESTAMP NOT NULL,
         status VARCHAR(50) DEFAULT 'SCHEDULED'
       );
     `);
@@ -18,7 +18,7 @@ async function initDatabase() {
     // Tabela de Palpites
     await pool.query(`
       CREATE TABLE IF NOT EXISTS palpites (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         email VARCHAR(255) NOT NULL,
         username VARCHAR(100) NOT NULL,
         jogo_id INT NOT NULL,
@@ -27,11 +27,11 @@ async function initDatabase() {
         pontos_ganhos INT DEFAULT 0,
         processado BOOLEAN DEFAULT FALSE,
         FOREIGN KEY (jogo_id) REFERENCES jogos(id),
-        UNIQUE KEY unique_usuario_jogo (email, jogo_id)
+        UNIQUE (email, jogo_id)
       );
     `);
 
-    console.log('Tabelas verificadas/criadas com sucesso no MySQL.');
+    console.log('Tabelas verificadas/criadas com sucesso no PostgreSQL.');
   } catch (error) {
     console.error('Erro ao inicializar o banco de dados:', error);
     process.exit(1);
