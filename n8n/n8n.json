@@ -1,0 +1,102 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst outputs = [];\nconst debugInfo = []; // Array de salvamento para debug\n\nfor (const item of items) {\n  const input = item.json;\n  \n  // Captura todas as colunas que vieram do Sheets para visualizarmos\n  const chavesDisponiveis = Object.keys(input);\n  \n  // Busca dinâmica pelo e-mail (ignora maiúsculas/minúsculas e procura partes da palavra)\n  let emailRaw = null;\n  for (const key of chavesDisponiveis) {\n    const keyLower = key.toLowerCase();\n    if (keyLower.includes('e-mail') || keyLower.includes('email') || keyLower.includes('corporativo')) {\n      emailRaw = input[key];\n      break; // Achou a coluna, para de procurar\n    }\n  }\n  const email = emailRaw ? emailRaw.toString().trim() : null;\n  \n  const palpites = [];\n  \n  // Regex atualizada: Aceita possíveis espaços em branco ANTES do colchete\n  const questionRegex = /^\\s*\\[(\\d+)\\]/;\n\n  for (const key in input) {\n    const match = key.match(questionRegex);\n    \n    if (match && input[key]) {\n      const gameId = parseInt(match[1]);\n      const placarRaw = input[key].toString().toLowerCase().trim();\n      const partes = placarRaw.split('x');\n\n      if (partes.length === 2) {\n        palpites.push({\n          jogoId: gameId,                        // <-- O nome exato que o seu Node espera!\n          palpiteA: parseInt(partes[0].trim()),\n          palpiteB: parseInt(partes[1].trim())\n        });\n      }\n    }\n  }\n\n  if (email && palpites.length > 0) {\n    outputs.push({\n      json: {\n        email: email,\n        palpites: palpites\n      }\n    });\n  } else {\n    // Se a linha falhar, documenta o porquê\n    debugInfo.push({\n      json: {\n        status: \"FALHA DE EXTRAÇÃO\",\n        motivo: !email ? \"E-mail não detectado\" : \"Regex de jogos falhou (Nenhum palpite capturado)\",\n        emailEncontrado: email,\n        quantidadePalpites: palpites.length,\n        chavesRecebidasDaPlanilha: chavesDisponiveis,\n        dadosBrutos: input\n      }\n    });\n  }\n}\n\n// Se deu tudo certo, retorna o payload final. Se falhou, retorna o log de erro.\nreturn outputs.length > 0 ? outputs : debugInfo;"
+      },
+      "id": "8fb041d4-40ae-4c3b-9bdb-fe75081e786e",
+      "name": "Processar Colunas do Forms",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cWjL0JsHoT_tczX3eJBaKJxWGPYdg4kmY0FbLIrrkng/edit?resourcekey=&gid=441470876#gid=441470876",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 441470876,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cWjL0JsHoT_tczX3eJBaKJxWGPYdg4kmY0FbLIrrkng/edit#gid=441470876"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d3f55ca3-6589-4a17-9b3b-cf2394a1449b",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "XdW1dF1GeycyZasH",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:3000/api/palpites",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"palpites\": {{ JSON.stringify($json.palpites) }}\n}",
+        "options": {}
+      },
+      "id": "e92f26b8-5f1d-41af-be33-8008b6d7ad62",
+      "name": "Enviar para a API Node",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Processar Colunas do Forms": {
+      "main": [
+        [
+          {
+            "node": "Enviar para a API Node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Processar Colunas do Forms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c7dfd5c61d911b7f26e4f767e59c94274273daf2eb2921138042bbdb97560bf2"
+  }
+}
