@@ -1,0 +1,6 @@
+backend/
+frontend/
+n8n/
+.env
+.DS_Store
+node_modules/
