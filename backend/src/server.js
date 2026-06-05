@@ -135,6 +135,132 @@ app.get('/api/palpites/:username', async (req, res) => {
   }
 });
 
+// Endpoint para estatísticas - Trending Games (jogos mais acirrados em votação)
+app.get('/api/stats/trending-games', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        j.id,
+        j.time_a,
+        j.time_b,
+        j.data_jogo,
+        COUNT(p.id)::int as total_palpites,
+        COALESCE(SUM(CASE WHEN (p.palpite_a > p.palpite_b) THEN 1 ELSE 0 END), 0)::int as votos_time_a,
+        COALESCE(SUM(CASE WHEN (p.palpite_a < p.palpite_b) THEN 1 ELSE 0 END), 0)::int as votos_time_b,
+        COALESCE(SUM(CASE WHEN (p.palpite_a = p.palpite_b) THEN 1 ELSE 0 END), 0)::int as votos_empate
+      FROM jogos j
+      LEFT JOIN palpites p ON j.id = p.jogo_id
+      WHERE j.status = 'SCHEDULED'
+      GROUP BY j.id, j.time_a, j.time_b, j.data_jogo
+      HAVING COUNT(p.id) > 0
+      ORDER BY (ABS((COALESCE(SUM(CASE WHEN (p.palpite_a > p.palpite_b) THEN 1 ELSE 0 END), 0) - 
+                     COALESCE(SUM(CASE WHEN (p.palpite_a < p.palpite_b) THEN 1 ELSE 0 END), 0)))) ASC,
+               (ABS((COALESCE(SUM(CASE WHEN (p.palpite_a > p.palpite_b) THEN 1 ELSE 0 END), 0) - 
+                     COALESCE(SUM(CASE WHEN (p.palpite_a = p.palpite_b) THEN 1 ELSE 0 END), 0)))) ASC
+      LIMIT 5
+    `;
+
+    const { rows } = await pool.query(query);
+    res.status(200).json({ trendingGames: rows });
+  } catch (error) {
+    console.error('Erro em trending-games:', error);
+    res.status(500).json({ error: 'Erro ao buscar trending games.' });
+  }
+});
+
+// Endpoint para estatísticas - Contrarian Bets (palpites zebra)
+app.get('/api/stats/contrarian-bets', async (req, res) => {
+  try {
+    const query = `
+      WITH results AS (
+        SELECT 
+          j.id as jogo_id,
+          j.time_a,
+          j.time_b,
+          j.data_jogo,
+          p.username,
+          p.palpite_a,
+          p.palpite_b,
+          CONCAT(p.palpite_a, '-', p.palpite_b) as placar,
+          CASE 
+            WHEN p.palpite_a > p.palpite_b THEN 'time_a'
+            WHEN p.palpite_a < p.palpite_b THEN 'time_b'
+            ELSE 'empate'
+          END as resultado_palpite
+        FROM palpites p
+        JOIN jogos j ON p.jogo_id = j.id
+        WHERE j.status = 'SCHEDULED'
+      ),
+      result_votes AS (
+        SELECT 
+          jogo_id,
+          time_a,
+          time_b,
+          data_jogo,
+          resultado_palpite,
+          COUNT(*) as votos,
+          RANK() OVER (PARTITION BY jogo_id ORDER BY COUNT(*) DESC) as rank
+        FROM results
+        GROUP BY jogo_id, time_a, time_b, data_jogo, resultado_palpite
+      ),
+      main_result AS (
+        SELECT 
+          jogo_id,
+          time_a,
+          time_b,
+          data_jogo,
+          resultado_palpite as main_resultado,
+          votos as main_votos
+        FROM result_votes
+        WHERE rank = 1
+      ),
+      minority_results AS (
+        SELECT 
+          rv.jogo_id,
+          rv.resultado_palpite,
+          rv.votos as resultado_votos,
+          mr.main_resultado,
+          mr.main_votos
+        FROM result_votes rv
+        JOIN main_result mr ON rv.jogo_id = mr.jogo_id
+        WHERE rv.resultado_palpite != mr.main_resultado
+          AND rv.votos <= 3
+        ORDER BY rv.votos ASC
+      )
+      SELECT 
+        r.jogo_id,
+        r.time_a,
+        r.time_b,
+        r.data_jogo,
+        r.username,
+        r.placar as placar_zebra,
+        CASE 
+          WHEN mr.main_resultado = 'time_a' THEN CONCAT(r.time_a, ' ganha')
+          WHEN mr.main_resultado = 'time_b' THEN CONCAT(r.time_b, ' ganha')
+          ELSE 'Empate'
+        END as main_placar,
+        CASE 
+          WHEN r.resultado_palpite = 'time_a' THEN CONCAT(r.time_a, ' ganha')
+          WHEN r.resultado_palpite = 'time_b' THEN CONCAT(r.time_b, ' ganha')
+          ELSE 'Empate'
+        END as resultado_zebra,
+        mr.main_votos::int,
+        mr.resultado_votos::int as placar_votos
+      FROM results r
+      JOIN minority_results mr ON r.jogo_id = mr.jogo_id AND r.resultado_palpite = mr.resultado_palpite
+      WHERE r.resultado_palpite != mr.main_resultado
+      ORDER BY mr.resultado_votos ASC, r.data_jogo ASC, RANDOM()
+      LIMIT 8
+    `;
+
+    const { rows } = await pool.query(query);
+    res.status(200).json({ contrarianBets: rows });
+  } catch (error) {
+    console.error('Erro em contrarian-bets:', error);
+    res.status(500).json({ error: 'Erro ao buscar contrarian bets.' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
