@@ -37,7 +37,7 @@ export interface ContrarianBet {
   placar_votos: number;
 }
 
-const baseURL = 'http://localhost:3001/api';
+const baseURL = 'https://copadomundoad.onrender.com/api';
 
 export async function fetchUserPalpites(username: string): Promise<ApiResponse> {
   const res = await fetch(`${baseURL}/palpites/${username}`);
