@@ -13,6 +13,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [searchedUser, setSearchedUser] = useState<string | null>(null);
 
+  const baseUrl = "https://res.cloudinary.com/dhj0lwxgq/image/upload/";
+  const transformations = "w_200,h_200,c_scale,f_auto,q_auto/";
+  const avatarUrl = searchedUser
+    ? `${baseUrl}${transformations}${encodeURIComponent(
+        searchedUser.trim().toLowerCase().replace(/\s+/g, ".")
+      )}.jpg`
+    : null;
+
   const executeSearch = async (targetUser: string) => {
     if (!targetUser.trim()) return;
 
@@ -166,8 +174,14 @@ export default function Home() {
               <div className="flex flex-col gap-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8 backdrop-blur-sm">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 sm:h-16 sm:w-16 bg-gradient-to-br from-[#10B981] to-[#047857] rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold shadow-lg border border-white/10 shrink-0 text-white">
-                      {searchedUser?.charAt(0).toUpperCase()}
+                    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden border border-white/10 shadow-lg shrink-0 bg-slate-900">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt={`Avatar de ${searchedUser}`} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-xl sm:text-2xl font-bold text-white bg-slate-800">
+                          {searchedUser?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </div>
                     <div className="text-left">
                       <h2 className="text-xs sm:text-sm text-slate-400 font-semibold uppercase tracking-wider mb-1">Resultados para:</h2>
