@@ -59,37 +59,35 @@ app.post('/api/palpites', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Mapeia apenas os IDs dos jogos que vieram na requisição
-    const jogoIds = palpites.map(p => p.jogoId);
-
-    // 2. Verifica no banco se esse email já tem registro para algum desses jogos
-    const checkQuery = `
-      SELECT jogo_id FROM palpites 
-      WHERE email = $1 AND jogo_id = ANY($2::int[])
-    `;
-    const { rows: jogosJaRegistrados } = await client.query(checkQuery, [email, jogoIds]);
-
-    // 3. Se o banco retornar alguma linha, significa que ele já palpitou em alguns (ou todos) esses jogos
-    if (jogosJaRegistrados.length > 0) {
-      await client.query('ROLLBACK'); // Aborta a transação
-
-      const idsDuplicados = jogosJaRegistrados.map(j => j.jogo_id);
-
-      // Retorna Status 409 (Conflict) informando exatamente quais jogos deram problema
-      return res.status(409).json({
-        error: 'Palpites já registrados.',
-        message: `O usuário ${username} já registrou palpites para os seguintes jogos: ${idsDuplicados.join(', ')}.`
-      });
+    // 1. Busca a data do primeiro jogo para validação de prazo
+    const { rows: firstGame } = await client.query('SELECT data_jogo FROM jogos ORDER BY data_jogo ASC LIMIT 1');
+    
+    if (firstGame.length > 0) {
+      const dataPrimeiroJogo = new Date(firstGame[0].data_jogo);
+      const hoje = new Date();
+      
+      // Zera as horas para comparar apenas a data (dia/mês/ano)
+      hoje.setHours(0, 0, 0, 0);
+      dataPrimeiroJogo.setHours(0, 0, 0, 0);
+      
+      if (hoje > dataPrimeiroJogo) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'O prazo para alterar os palpites encerrou. As alterações só eram permitidas até o dia do primeiro jogo.' });
+      }
     }
 
-    // 4. Se passou pela checagem acima, é porque são jogos novos (ex: Rodada 2). Fazemos o INSERT simples.
-    const insertQuery = `
+    // 2. Insere ou atualiza os palpites (Sobrescrevendo os antigos caso já existam)
+    const upsertQuery = `
       INSERT INTO palpites (email, username, jogo_id, palpite_a, palpite_b)
       VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (email, jogo_id) 
+      DO UPDATE SET 
+        palpite_a = EXCLUDED.palpite_a, 
+        palpite_b = EXCLUDED.palpite_b
     `;
 
     for (const p of palpites) {
-      await client.query(insertQuery, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
+      await client.query(upsertQuery, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
     }
 
     await client.query('COMMIT');
