@@ -75,7 +75,7 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
-                    Ousadia de
+                    Palpite de
                   </p>
                   <p className="text-base font-bold text-white leading-none">
                     {bet.username}
@@ -95,12 +95,12 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
 
             {/* Placar Comparativo */}
             <div className="flex items-stretch justify-between rounded-xl bg-white/[0.03] border border-white/5 overflow-hidden">
-              
+
               {/* Lado da Maioria */}
               <div className="flex-1 text-center p-3 sm:p-4">
                 <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-2">
                   <Users className="h-4 w-4" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">Maioria</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider">Consenso</span>
                 </div>
                 <p className="text-2xl font-black text-slate-300">
                   {bet.main_placar}
@@ -119,7 +119,7 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
               <div className="flex-1 text-center p-3 sm:p-4 relative overflow-hidden">
                 {/* Gradiente de fundo sutil no lado da zebra */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#FBBF24]/10 to-transparent pointer-events-none" />
-                
+
                 <div className="relative z-10">
                   <div className="flex items-center justify-center gap-1.5 text-[#FBBF24] mb-2">
                     <Target className="h-4 w-4" />
@@ -129,7 +129,7 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
                     {bet.placar_zebra}
                   </p>
                   <p className="text-[10px] font-bold text-[#FBBF24]/70 mt-1 uppercase tracking-widest">
-                    Diferenciado
+                    Aposta Única
                   </p>
                 </div>
               </div>
