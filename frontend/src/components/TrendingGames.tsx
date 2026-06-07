@@ -80,14 +80,14 @@ export function TrendingGames({ games }: TrendingGamesProps) {
                 </div>
 
                 {/* Times */}
-                <div className="flex items-center justify-between gap-4 mb-5">
-                  <p className="flex-1 text-base sm:text-lg font-black text-white text-right truncate">
+                <div className="flex items-center justify-between gap-2 sm:gap-4 mb-5">
+                  <p className="flex-1 text-sm sm:text-base md:text-lg font-black text-white text-right line-clamp-2 leading-tight break-words">
                     {game.time_a}
                   </p>
                   <div className="flex flex-col items-center justify-center shrink-0">
-                    <span className="text-xs font-black text-slate-600 italic">VS</span>
+                    <span className="text-[10px] sm:text-xs font-black text-slate-600 italic">VS</span>
                   </div>
-                  <p className="flex-1 text-base sm:text-lg font-black text-white text-left truncate">
+                  <p className="flex-1 text-sm sm:text-base md:text-lg font-black text-white text-left line-clamp-2 leading-tight break-words">
                     {game.time_b}
                   </p>
                 </div>

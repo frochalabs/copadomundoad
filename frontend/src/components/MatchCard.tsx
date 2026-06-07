@@ -59,10 +59,10 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
         </div>
 
         {/* Score Guess */}
-        <div className="shrink-0 px-3 sm:px-5 flex items-center justify-center gap-2 sm:gap-3">
-          <span className="text-4xl sm:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_a}</span>
-          <span className="text-2xl font-black text-slate-600 whitespace-nowrap">-</span>
-          <span className="text-4xl sm:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_b}</span>
+        <div className="shrink-0 px-2 sm:px-4 md:px-5 flex items-center justify-center gap-1.5 sm:gap-3">
+          <span className="text-3xl sm:text-4xl md:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_a}</span>
+          <span className="text-xl sm:text-2xl font-black text-slate-600 whitespace-nowrap">-</span>
+          <span className="text-3xl sm:text-4xl md:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_b}</span>
         </div>
 
         {/* Team B */}
