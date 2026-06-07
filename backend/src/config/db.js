@@ -23,7 +23,7 @@ const pool = new Pool({
   ...poolConfig,
   max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 15000, // Aumentado para 15 segundos devido à latência do Render Free
 });
 
 module.exports = pool;

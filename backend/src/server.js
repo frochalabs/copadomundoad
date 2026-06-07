@@ -54,9 +54,10 @@ app.post('/api/palpites', async (req, res) => {
   }
 
   const username = email.split('@')[0].toLowerCase();
-  const client = await pool.connect();
+  let client;
 
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
 
     // 1. Busca a data do primeiro jogo para validação de prazo
@@ -94,11 +95,19 @@ app.post('/api/palpites', async (req, res) => {
     res.status(200).json({ message: `Palpites de ${username} registrados com sucesso!` });
 
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao salvar palpites.' });
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Erro no rollback:', rollbackError);
+      }
+    }
+    console.error('Erro na rota /api/palpites:', error);
+    res.status(500).json({ error: 'Erro ao salvar palpites.', detalhes: error.message });
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 });
 
