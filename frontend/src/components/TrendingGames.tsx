@@ -10,13 +10,20 @@ interface TrendingGamesProps {
 
 export function TrendingGames({ games }: TrendingGamesProps) {
   const formatDate = (dateString: string) => {
-    const dateObj = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(dateObj);
+    try {
+      const safeDateString = typeof dateString === 'string' ? dateString.replace(' ', 'T') : dateString;
+      const dateObj = new Date(safeDateString);
+      if (isNaN(dateObj.getTime())) return 'Data a definir';
+      
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(dateObj);
+    } catch (e) {
+      return 'Data a definir';
+    }
   };
 
   if (games.length === 0) {

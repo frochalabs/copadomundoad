@@ -20,14 +20,22 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
     pointsIcon = palpite.pontos_ganhos === 3 ? <Trophy size={14} className="mr-1" /> : <Check size={14} className="mr-1" />;
   }
 
-  // Format date
-  const dateObj = new Date(palpite.data_jogo);
-  const formattedDate = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(dateObj);
+  // Format date safely for Safari
+  let formattedDate = 'Data a definir';
+  try {
+    const safeDateString = typeof palpite.data_jogo === 'string' ? palpite.data_jogo.replace(' ', 'T') : palpite.data_jogo;
+    const dateObj = new Date(safeDateString);
+    if (!isNaN(dateObj.getTime())) {
+      formattedDate = new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(dateObj);
+    }
+  } catch (e) {
+    // Keep fallback
+  }
 
   return (
     <motion.div
