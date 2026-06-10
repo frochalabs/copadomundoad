@@ -1,0 +1,212 @@
+{
+  "info": {
+    "name": "Bolão Copa do Mundo - Endpoints Locais",
+    "description": "Endpoints do servidor Node.js local do bolão.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. GET Ranking (Top 10)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/ranking",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "ranking"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. GET Palpites do Usuário",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/palpites/fabiano.sales",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "palpites",
+            "fabiano.sales"
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. GET Trending Games",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/stats/trending-games",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "stats",
+            "trending-games"
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. GET Contrarian Bets",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3001/api/stats/contrarian-bets",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "stats",
+            "contrarian-bets"
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. POST Enviar Palpites (Mock)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"fabiano.sales@adpromotora.com.br\",\n  \"palpites\": [\n    {\n      \"jogoId\": 1001,\n      \"palpiteA\": 3,\n      \"palpiteB\": 0\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/palpites",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "palpites"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. GET Todos os Jogos",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3001/api/jogos",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "jogos"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. DELETE Excluir Jogo",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "http://localhost:3001/api/jogos/1001",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "jogos",
+            "1001"
+          ]
+        }
+      }
+    },
+    {
+      "name": "8. POST Sincronizar Jogos API",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:3001/api/admin/sync-games",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "admin",
+            "sync-games"
+          ]
+        }
+      }
+    },
+    {
+      "name": "9. POST Adicionar Jogos em Lote",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jogos\": [\n    {\n      \"api_id\": 537400,\n      \"time_a\": \"Brasil\",\n      \"time_b\": \"Sérvia\",\n      \"data_jogo\": \"2026-06-20T19:00:00Z\",\n      \"status\": \"SCHEDULED\",\n      \"gols_a\": null,\n      \"gols_b\": null\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/jogos",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "jogos"
+          ]
+        }
+      }
+    }
+  ]
+}

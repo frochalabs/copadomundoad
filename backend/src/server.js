@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db');
 const initDatabase = require('./config/init-db');
+const { iniciarWorker } = require('./services/matchWorker');
 
 const app = express();
 app.use(cors());
@@ -9,6 +10,9 @@ app.use(express.json());
 
 // Inicializa as tabelas antes de abrir o servidor
 initDatabase();
+
+// Inicia o motor de polling (Cron Job)
+iniciarWorker();
 
 // Endpoint para cadastrar ou atualizar múltiplos jogos (carga inicial da API)
 app.post('/api/jogos/seed', async (req, res) => {
@@ -258,6 +262,154 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
   } catch (error) {
     console.error('Erro em contrarian-bets:', error);
     res.status(500).json({ error: 'Erro ao buscar contrarian bets.' });
+  }
+});
+
+// Endpoint de Ranking (Top 10)
+app.get('/api/ranking', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+          username,
+          COALESCE(SUM(pontos_ganhos), 0)::int as total_pontos,
+          COUNT(*) FILTER (WHERE pontos_ganhos = 5)::int as cravadas
+      FROM palpites
+      WHERE processado = true
+      GROUP BY username
+      ORDER BY 
+          total_pontos DESC,
+          cravadas DESC,
+          username ASC
+      LIMIT 10;
+    `;
+    const { rows } = await pool.query(query);
+    
+    // Formatar com posição
+    const ranking = rows.map((r, i) => ({
+      posicao: i + 1,
+      username: r.username,
+      total_pontos: r.total_pontos,
+      cravadas: r.cravadas
+    }));
+
+    res.status(200).json({ ranking });
+  } catch (error) {
+    console.error('Erro ao buscar ranking:', error);
+    res.status(500).json({ error: 'Erro interno ao carregar o ranking.' });
+  }
+});
+
+// Endpoint para buscar todos os jogos
+app.get('/api/jogos', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM jogos ORDER BY data_jogo ASC, id ASC');
+    res.status(200).json({ jogos: rows });
+  } catch (error) {
+    console.error('Erro ao buscar jogos:', error);
+    res.status(500).json({ error: 'Erro ao buscar jogos.' });
+  }
+});
+
+// Endpoint para excluir um jogo (e seus palpites associados para não quebrar a Foreign Key)
+app.delete('/api/jogos/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // Exclui primeiro os palpites daquele jogo
+    await client.query('DELETE FROM palpites WHERE jogo_id = $1', [id]);
+    
+    // Depois exclui o jogo
+    const { rowCount } = await client.query('DELETE FROM jogos WHERE id = $1', [id]);
+    
+    if (rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Jogo não encontrado.' });
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ message: 'Jogo e palpites associados excluídos com sucesso!' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao excluir jogo:', error);
+    res.status(500).json({ error: 'Erro ao excluir o jogo.' });
+  } finally {
+    client.release();
+  }
+});
+
+// Endpoint de Administração: Sincronizar Jogos com a API Externa
+// Isso irá adicionar o api_id e corrigir a data_jogo usando o utcDate oficial.
+const { syncJogos } = require('./scripts/syncJogosApi');
+app.post('/api/admin/sync-games', async (req, res) => {
+  try {
+    const atualizados = await syncJogos();
+    res.status(200).json({ message: `Sincronização concluída! ${atualizados} jogos foram atualizados com o ID e data oficiais da API.` });
+  } catch (error) {
+    console.error('Erro na rota de sync:', error);
+    res.status(500).json({ error: 'Falha ao sincronizar jogos com a API externa.' });
+  }
+});
+
+// Endpoint para adicionar múltiplos jogos manualmente (em lote)
+app.post('/api/jogos', async (req, res) => {
+  const { jogos } = req.body;
+
+  if (!Array.isArray(jogos) || jogos.length === 0) {
+    return res.status(400).json({ error: 'Envie um array de jogos no formato { "jogos": [ ... ] }.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Como sua tabela não usa SERIAL, calculamos o próximo ID sequencial a partir do maior existente
+    const { rows: maxIdRow } = await client.query('SELECT COALESCE(MAX(id), 1000) as max_id FROM jogos');
+    let proximoId = parseInt(maxIdRow[0].max_id, 10) + 1;
+
+    const inseridos = [];
+
+    const query = `
+      INSERT INTO jogos (id, api_id, time_a, time_b, data_jogo, status, gols_a, gols_b) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT (api_id) DO NOTHING
+      RETURNING *;
+    `;
+
+    for (const jogo of jogos) {
+      const { api_id, time_a, time_b, data_jogo, status, gols_a, gols_b } = jogo;
+
+      const { rows } = await client.query(query, [
+        proximoId,
+        api_id || null,
+        time_a,
+        time_b,
+        data_jogo,
+        status || 'SCHEDULED',
+        gols_a !== undefined ? gols_a : null,
+        gols_b !== undefined ? gols_b : null
+      ]);
+      
+      // Só incrementa o proximoId e adiciona aos inseridos se ele realmente gravou no banco (não foi ignorado)
+      if (rows.length > 0) {
+        inseridos.push(rows[0]);
+        proximoId++;
+      }
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ message: `${inseridos.length} jogos criados com sucesso!`, jogos: inseridos });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao criar jogos:', error);
+    if (error.code === '23505') {
+      res.status(409).json({ error: 'Um dos jogos inseridos possui um api_id que já está cadastrado.' });
+    } else {
+      res.status(500).json({ error: 'Erro interno ao criar os jogos.' });
+    }
+  } finally {
+    client.release();
   }
 });
 

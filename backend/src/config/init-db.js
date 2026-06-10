@@ -15,6 +15,11 @@ async function initDatabase() {
       );
     `);
 
+    // Garante que a coluna de relacionamento com a API exista, mesmo se a tabela já foi criada antes
+    await pool.query(`
+      ALTER TABLE jogos ADD COLUMN IF NOT EXISTS api_id INTEGER UNIQUE;
+    `);
+
     // Tabela de Palpites
     await pool.query(`
       CREATE TABLE IF NOT EXISTS palpites (
