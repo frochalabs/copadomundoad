@@ -24,6 +24,13 @@ export interface TrendingGame {
   votos_empate: number;
 }
 
+export interface RankingItem {
+  posicao: number;
+  username: string;
+  total_pontos: number;
+  cravadas: number;
+}
+
 export interface ContrarianBet {
   jogo_id: number;
   time_a: string;
@@ -67,6 +74,16 @@ export async function fetchContrarianBets(): Promise<{ contrarianBets: Contraria
 
   if (!res.ok) {
     throw new Error('Erro ao buscar palpites contrários');
+  }
+
+  return res.json();
+}
+
+export async function fetchRanking(): Promise<{ ranking: RankingItem[] }> {
+  const res = await fetch(`${baseURL}/ranking`);
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar ranking');
   }
 
   return res.json();

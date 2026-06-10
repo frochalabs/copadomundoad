@@ -6,7 +6,22 @@ import { Palpite, fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, Tr
 import { MatchCard } from "@/components/MatchCard";
 import { TrendingGames } from "@/components/TrendingGames";
 import { ContrarianBets } from "@/components/ContrarianBets";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+const LOADING_PHRASES = [
+  "Aquecendo os jogadores...",
+  "Calculando a probabilidade de zebras...",
+  "Limpando as chuteiras...",
+  "Consultando o VAR...",
+  "Desenhando a linha do impedimento...",
+  "Buscando as estatísticas do campeonato...",
+  "Preparando o gramado...",
+  "Ouvindo as reclamações dos técnicos...",
+  "Calculando os acréscimos...",
+  "Ajeitando a barreira...",
+  "Analisando táticas...",
+  "Convocando os craques..."
+];
 
 export default function Home() {
   const [username, setUsername] = useState("");
@@ -15,9 +30,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [searchedUser, setSearchedUser] = useState<string | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [teamSearch, setTeamSearch] = useState("");
+  const itemsPerPage = 24;
+
   const [trendingGames, setTrendingGames] = useState<TrendingGame[]>([]);
   const [contrarianBets, setContrarianBets] = useState<ContrarianBet[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
 
   const baseUrl = "https://res.cloudinary.com/dhj0lwxgq/image/upload/";
   const transformations = "w_200,h_200,c_scale,f_auto,q_auto/";
@@ -26,6 +46,17 @@ export default function Home() {
         searchedUser.trim().toLowerCase().replace(/\s+/g, ".")
       )}.jpg`
     : null;
+
+  // Efeito para ciclar as frases divertidas de carregamento
+  useEffect(() => {
+    let phraseInterval: NodeJS.Timeout;
+    if (statsLoading) {
+      phraseInterval = setInterval(() => {
+        setLoadingPhraseIndex((prev) => (prev + 1) % LOADING_PHRASES.length);
+      }, 1500); // Muda a frase a cada 1.5s para dar uma sensação frenética/dinâmica
+    }
+    return () => clearInterval(phraseInterval);
+  }, [statsLoading]);
 
   // Carrega as estatísticas ao montar o componente
   useEffect(() => {
@@ -54,6 +85,8 @@ export default function Home() {
     setError(null);
     setSearchedUser(null);
     setPalpites([]);
+    setCurrentPage(1);
+    setTeamSearch("");
 
     try {
       const data = await fetchUserPalpites(targetUser);
@@ -70,6 +103,52 @@ export default function Home() {
     e.preventDefault();
     executeSearch(username);
   };
+
+  if (statsLoading) {
+    return (
+      <main className="min-h-screen relative overflow-hidden bg-[#051020] flex flex-col items-center justify-center p-6">
+        {/* Fundo do loading (Mesh estático e leve) */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#10B981] rounded-full blur-[150px] opacity-10 pointer-events-none -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#FBBF24] rounded-full blur-[150px] opacity-[0.05] pointer-events-none translate-x-1/3 animate-pulse"></div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center max-w-md w-full gap-8">
+          
+          {/* Animação Circular Central (Bola de Futebol girando) */}
+          <div className="relative flex items-center justify-center">
+            {/* Círculo pontilhado de loading */}
+            <div className="w-28 h-28 rounded-full border-[3px] border-dashed border-[#10B981] animate-[spin_4s_linear_infinite] opacity-60"></div>
+            {/* Círculo interno */}
+            <div className="absolute w-20 h-20 rounded-full border border-[#FBBF24] animate-[spin_2s_linear_infinite_reverse] opacity-30"></div>
+            {/* Bola de Futebol */}
+            <div className="absolute text-5xl drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+              ⚽
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center gap-3 min-h-[80px]">
+            <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] to-[#FBBF24] tracking-widest uppercase">
+              Bolão da Copa AD
+            </h2>
+            <div className="h-6 relative w-full flex justify-center">
+              <AnimatePresence mode="wait">
+                <motion.p 
+                  key={loadingPhraseIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-slate-400 font-medium text-sm absolute text-center w-max"
+                >
+                  {LOADING_PHRASES[loadingPhraseIndex]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen relative overflow-hidden bg-[#051020]">
@@ -249,15 +328,75 @@ export default function Home() {
                 Nenhum jogo iniciado ainda. Volte após o primeiro jogo para ver a pontuação real.
               </div>
 
-              <div className="text-left w-full mt-8">
-                <h3 className="text-xl font-bold text-white mb-6">Seus palpites:</h3>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full mt-8 mb-6 gap-4">
+                <h3 className="text-xl font-bold text-white">Seus palpites:</h3>
+                
+                <div className="relative flex items-center bg-white/5 rounded-lg border border-white/10 px-3 py-2 focus-within:border-[#10B981]/50 w-full sm:w-64 transition-colors">
+                  <Search className="h-4 w-4 text-slate-400 mr-2 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Buscar por seleção..."
+                    value={teamSearch}
+                    onChange={(e) => {
+                      setTeamSearch(e.target.value);
+                      setCurrentPage(1); // Volta para a primeira página ao pesquisar
+                    }}
+                    className="bg-transparent border-none text-white text-sm outline-none w-full placeholder-slate-500"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {palpites.map((palpite, index) => (
-                  <MatchCard key={palpite.jogo_id} palpite={palpite} index={index} />
-                ))}
-              </div>
+              {(() => {
+                // Filtra os palpites pelo nome da seleção (time A ou time B)
+                const filteredPalpites = palpites.filter(p => {
+                  if (!teamSearch.trim()) return true;
+                  const term = teamSearch.toLowerCase();
+                  return p.time_a.toLowerCase().includes(term) || p.time_b.toLowerCase().includes(term);
+                });
+
+                // Calcula os recortes de paginação
+                const totalPages = Math.ceil(filteredPalpites.length / itemsPerPage);
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const currentPalpites = filteredPalpites.slice(startIndex, startIndex + itemsPerPage);
+
+                return (
+                  <>
+                    {filteredPalpites.length === 0 ? (
+                      <div className="w-full text-center py-12 text-slate-400 bg-white/[0.02] rounded-xl border border-white/5">
+                        Nenhum palpite encontrado para "{teamSearch}"
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {currentPalpites.map((palpite, index) => (
+                          <MatchCard key={palpite.jogo_id} palpite={palpite} index={startIndex + index} />
+                        ))}
+                      </div>
+                    )}
+
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 sm:gap-4 mt-10">
+                        <button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                          className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
+                        >
+                          Anterior
+                        </button>
+                        <span className="text-slate-400 text-sm font-medium min-w-[100px] text-center">
+                          Página {currentPage} de {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage === totalPages}
+                          className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
+                        >
+                          Próxima
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
