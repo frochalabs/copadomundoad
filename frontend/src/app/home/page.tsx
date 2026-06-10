@@ -102,11 +102,11 @@ export default function Home() {
           </div>
 
           {/* Title and Subtitle Container */}
-          <div className="flex flex-col items-center gap-4 mt-4 md:mt-8">
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] to-[#FBBF24]">
+          <div className="flex flex-col items-center gap-2 sm:gap-4 mt-4 md:mt-8 px-2">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] to-[#FBBF24] text-center">
               VAMOS BRASIL
             </h1>
-            <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto">
+            <p className="text-slate-400 text-base sm:text-lg md:text-xl font-medium max-w-2xl mx-auto text-center">
               Consulte seus palpites e acompanhe sua pontuação no bolão.
             </p>
           </div>
@@ -124,16 +124,16 @@ export default function Home() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="ex: fabiano.sales"
-                  className="border-none bg-transparent text-white p-[5px] pl-2 w-full outline-none placeholder-slate-400 text-lg"
+                  className="border-none bg-transparent text-white p-[5px] pl-2 w-full outline-none placeholder-slate-400 text-lg sm:text-base"
                 />
               </div>
 
               {/* buttons */}
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-2 shrink-0 w-full sm:w-auto">
                 <button
                   type="submit"
                   disabled={isLoading || !username.trim()}
-                  className="flex items-center justify-center bg-gradient-to-br from-[#10B981] to-[#047857] text-white border-none rounded-[5px] px-[24px] py-[10px] cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-[2px] hover:shadow-[0_4px_15px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed font-bold text-lg"
+                  className="w-full sm:w-auto flex items-center justify-center bg-gradient-to-br from-[#10B981] to-[#047857] text-white border-none rounded-[5px] px-[24px] py-[10px] cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-[2px] hover:shadow-[0_4px_15px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed font-bold text-lg"
                 >
                   {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Buscar"}
                 </button>

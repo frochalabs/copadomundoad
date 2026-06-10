@@ -75,7 +75,7 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
-                    Ousadia de
+                    Palpite de
                   </p>
                   <p className="text-base font-bold text-white leading-none">
                     {bet.username}
@@ -94,15 +94,15 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
             </div>
 
             {/* Placar Comparativo */}
-            <div className="flex items-stretch justify-between rounded-xl bg-white/[0.03] border border-white/5 overflow-hidden">
-              
+            <div className="flex flex-col sm:flex-row sm:items-stretch justify-between rounded-xl bg-white/[0.03] border border-white/5 overflow-hidden">
+
               {/* Lado da Maioria */}
               <div className="flex-1 text-center p-3 sm:p-4">
                 <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-2">
                   <Users className="h-4 w-4" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">Maioria</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider">Consenso</span>
                 </div>
-                <p className="text-2xl font-black text-slate-300">
+                <p className="text-xl sm:text-2xl font-black text-slate-300">
                   {bet.main_placar}
                 </p>
                 <p className="text-[10px] font-medium text-slate-500 mt-1">
@@ -111,7 +111,7 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
               </div>
 
               {/* Divisor */}
-              <div className="flex flex-col items-center justify-center bg-white/[0.02] px-2 sm:px-4 border-l border-r border-white/5">
+              <div className="flex sm:flex-col items-center justify-center bg-white/[0.02] py-2 sm:py-0 px-2 sm:px-4 border-y sm:border-y-0 sm:border-x border-white/5">
                 <span className="text-xs font-black text-slate-500 italic">VS</span>
               </div>
 
@@ -119,17 +119,17 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
               <div className="flex-1 text-center p-3 sm:p-4 relative overflow-hidden">
                 {/* Gradiente de fundo sutil no lado da zebra */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#FBBF24]/10 to-transparent pointer-events-none" />
-                
+
                 <div className="relative z-10">
                   <div className="flex items-center justify-center gap-1.5 text-[#FBBF24] mb-2">
                     <Target className="h-4 w-4" />
                     <span className="text-xs font-bold uppercase tracking-wider">Zebra</span>
                   </div>
-                  <p className="text-3xl font-black text-[#FBBF24] drop-shadow-[0_0_12px_rgba(251,191,36,0.2)]">
+                  <p className="text-2xl sm:text-3xl font-black text-[#FBBF24] drop-shadow-[0_0_12px_rgba(251,191,36,0.2)]">
                     {bet.placar_zebra}
                   </p>
                   <p className="text-[10px] font-bold text-[#FBBF24]/70 mt-1 uppercase tracking-widest">
-                    Diferenciado
+                    Aposta Única
                   </p>
                 </div>
               </div>

@@ -20,14 +20,22 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
     pointsIcon = palpite.pontos_ganhos === 3 ? <Trophy size={14} className="mr-1" /> : <Check size={14} className="mr-1" />;
   }
 
-  // Format date
-  const dateObj = new Date(palpite.data_jogo);
-  const formattedDate = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(dateObj);
+  // Format date safely for Safari
+  let formattedDate = 'Data a definir';
+  try {
+    const safeDateString = typeof palpite.data_jogo === 'string' ? palpite.data_jogo.replace(' ', 'T') : palpite.data_jogo;
+    const dateObj = new Date(safeDateString);
+    if (!isNaN(dateObj.getTime())) {
+      formattedDate = new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(dateObj);
+    }
+  } catch (e) {
+    // Keep fallback
+  }
 
   return (
     <motion.div
@@ -59,10 +67,10 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
         </div>
 
         {/* Score Guess */}
-        <div className="shrink-0 px-3 sm:px-5 flex items-center justify-center gap-2 sm:gap-3">
-          <span className="text-4xl sm:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_a}</span>
-          <span className="text-2xl font-black text-slate-600 whitespace-nowrap">-</span>
-          <span className="text-4xl sm:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_b}</span>
+        <div className="shrink-0 px-2 sm:px-4 md:px-5 flex items-center justify-center gap-1.5 sm:gap-3">
+          <span className="text-3xl sm:text-4xl md:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_a}</span>
+          <span className="text-xl sm:text-2xl font-black text-slate-600 whitespace-nowrap">-</span>
+          <span className="text-3xl sm:text-4xl md:text-5xl font-black text-white whitespace-nowrap">{palpite.palpite_b}</span>
         </div>
 
         {/* Team B */}
