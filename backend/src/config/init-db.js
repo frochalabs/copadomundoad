@@ -10,7 +10,7 @@ async function initDatabase() {
         time_b VARCHAR(100) NOT NULL,
         gols_a INT DEFAULT NULL,
         gols_b INT DEFAULT NULL,
-        data_jogo TIMESTAMP NOT NULL,
+        data_jogo TIMESTAMPTZ NOT NULL,
         status VARCHAR(50) DEFAULT 'SCHEDULED'
       );
     `);
@@ -18,6 +18,11 @@ async function initDatabase() {
     // Garante que a coluna de relacionamento com a API exista, mesmo se a tabela já foi criada antes
     await pool.query(`
       ALTER TABLE jogos ADD COLUMN IF NOT EXISTS api_id INTEGER UNIQUE;
+    `);
+
+    // Garante que bancos de dados legados convertam a coluna de data para TIMESTAMPTZ (UTC)
+    await pool.query(`
+      ALTER TABLE jogos ALTER COLUMN data_jogo TYPE TIMESTAMPTZ USING data_jogo AT TIME ZONE 'UTC';
     `);
 
     // Tabela de Palpites

@@ -102,7 +102,7 @@ async function seedGroupStage() {
 
     console.log(`2. Disparando POST para adicionar ${jogosParaInserir.length} jogos no nosso banco local...`);
 
-    const localRes = await fetch('http://localhost:3001/api/jogos', {
+    const localRes = await fetch('https://copadomundoad.onrender.com/api/jogos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jogos: jogosParaInserir })
