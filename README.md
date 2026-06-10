@@ -1,45 +1,82 @@
-# Bolão da Copa AD 🏆
+<div align="center">
+  <img src="https://cdn.jornaldaparaiba.com.br/img/inline/210000/Copa-do-Mundo-2026-conheca-a-Trionda-bola-oficial-0021348700202510040824.webp?xid=1170998" alt="Copa do Mundo" width="150"/>
+  <h1>Bolão da Copa AD</h1>
+  <p><strong>Plataforma para gestão de bolões da Copa do Mundo 2026.</strong></p>
 
-Bem-vindo ao repositório do **Bolão da Copa AD**, uma aplicação completa para gestão e participação em bolões da Copa do Mundo! 
+  <p>
+    <img src="https://img.shields.io/badge/Next.js-Black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+    <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+    <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+    <img src="https://img.shields.io/badge/n8n-FF6F61?style=for-the-badge&logo=n8n&logoColor=white" alt="n8n" />
+  </p>
+</div>
 
-Este projeto foi desenhado com uma arquitetura moderna, dividida em três frentes principais, cada uma hospedada em sua respectiva branch neste repositório.
+<br>
 
-## 🏗️ Estrutura do Projeto
+Repositório da aplicação do Bolão da Copa AD. A aplicação é dividida em frontend, backend e rotinas de automação.
 
-O repositório está organizado em branches separadas para cada componente da aplicação. Para visualizar ou contribuir com um serviço específico, faça o checkout da branch correspondente:
+## Funcionalidades e Arquitetura
 
-- **[`backend`](https://github.com/frochalabs/BolaoDaCopaAD/tree/backend)**: API Node.js/Express responsável pela lógica de negócios, integração com banco de dados MySQL e fornecimento de dados para o painel.
-- **[`frontend`](https://github.com/frochalabs/BolaoDaCopaAD/tree/frontend)**: Aplicação Next.js (App Router) com Tailwind CSS e Framer Motion, fornecendo uma interface de usuário premium e responsiva (estilo "Dark Executive" / E-sports).
-- **[`n8n`](https://github.com/frochalabs/BolaoDaCopaAD/tree/n8n)**: Configurações e fluxos do N8N para automações, integrações externas e webhooks.
-
-## 🚀 Como Executar Localmente
-
-Se você deseja rodar o projeto completo localmente, recomendamos clonar cada branch em sua respectiva pasta.
-
-```bash
-# Crie uma pasta para o projeto
-mkdir BolaoDaCopaAD && cd BolaoDaCopaAD
-
-# Clone cada componente em sua respectiva pasta
-git clone -b backend git@github.com:frochalabs/BolaoDaCopaAD.git backend
-git clone -b frontend git@github.com:frochalabs/BolaoDaCopaAD.git frontend
-git clone -b n8n git@github.com:frochalabs/BolaoDaCopaAD.git n8n
-```
-
-### Pré-requisitos
-- Node.js (v18+)
-- MySQL
-- N8N (opcional, para automações)
-
-*(Consulte o README interno de cada branch para instruções detalhadas de configuração de variáveis de ambiente e execução de cada serviço).*
-
-## 🛠️ Tecnologias Utilizadas
-
-- **Frontend:** Next.js, React, Tailwind CSS, Framer Motion
-- **Backend:** Node.js, Express, MySQL2, Node-cron
-- **Automação:** N8N
-- **Deploy/Hospedagem:** (A definir)
+- **Frontend**: Aplicação em Next.js com Tailwind CSS e Framer Motion para a interface de usuário.
+- **Sincronização de Jogos**: Um worker utilizando `node-cron` verifica periodicamente o banco de dados e consulta a API `football-data.org` para atualizar os resultados das partidas concluídas, minimizando o número de requisições.
+- **Gerenciamento de Fuso Horário**: O banco de dados utiliza o formato `TIMESTAMPTZ` do PostgreSQL para armazenar os horários dos jogos, garantindo compatibilidade independentemente do fuso horário em que o servidor ou o usuário estejam localizados.
+- **Estatísticas**: Endpoints SQL dedicados para calcular tendências de palpites, jogos com maior engajamento e palpites divergentes da maioria.
+- **Integração com n8n**: Endpoints configurados para receber dados de palpites via webhooks, permitindo a integração com formulários externos sem alterações no código fonte.
 
 ---
-*Desenvolvido com ⚽ para a Copa do Mundo!*
-# copadomundoad
+
+## Estrutura do Monorepo
+
+- **`/backend`**: API REST desenvolvida em Node.js com Express. Contém scripts de sincronização, mapeamento de times e conexão com PostgreSQL.
+- **`/frontend`**: Aplicação Next.js (App Router) responsável pela renderização da interface e consumo da API.
+- **`/n8n`** *(opcional)*: Arquivos de configuração dos fluxos de automação.
+
+---
+
+## Instruções de Execução
+
+### 1. Pré-requisitos
+- Node.js (v18 ou superior)
+- PostgreSQL em execução localmente ou via Docker
+
+```bash
+git clone git@github.com:frochalabs/copadomundoad.git
+cd copadomundoad
+```
+
+### 2. Backend
+O backend possui scripts para configuração inicial do banco e carga de dados.
+
+```bash
+cd backend
+npm install
+
+# Configure as variáveis de ambiente
+cp .env.example .env
+
+# Inicie o servidor (as tabelas serão criadas automaticamente na primeira execução)
+npm run dev
+```
+
+Para preencher o banco de dados com as informações oficiais da fase de grupos, execute o script em um terminal separado:
+```bash
+node src/scripts/seedGroupStageFromApi.js
+```
+
+### 3. Frontend
+Em um novo terminal, inicie a interface:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+A aplicação estará disponível em `http://localhost:3000`.
+
+---
+
+## Testes e Administração
+O projeto inclui uma coleção do Postman (`backend/bolao_postman_collection.json`) contendo:
+- Endpoints de leitura e escrita de jogos.
+- Rota administrativa para sincronização manual de identificadores da API externa (`POST /api/admin/sync-games`).
+- Endpoints de consulta de ranking e estatísticas.
