@@ -212,7 +212,7 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
           data_jogo,
           resultado_palpite,
           COUNT(*) as votos,
-          RANK() OVER (PARTITION BY jogo_id ORDER BY COUNT(*) DESC) as rank
+          ROW_NUMBER() OVER (PARTITION BY jogo_id ORDER BY COUNT(*) DESC, resultado_palpite ASC) as rank
         FROM results
         GROUP BY jogo_id, time_a, time_b, data_jogo, resultado_palpite
       ),
