@@ -85,8 +85,9 @@ app.post('/api/palpites', async (req, res) => {
     const upsertQuery = `
       INSERT INTO palpites (email, username, jogo_id, palpite_a, palpite_b)
       VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (email, jogo_id) 
+      ON CONFLICT (username, jogo_id) 
       DO UPDATE SET 
+        email = EXCLUDED.email,
         palpite_a = EXCLUDED.palpite_a, 
         palpite_b = EXCLUDED.palpite_b
     `;

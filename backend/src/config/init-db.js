@@ -37,9 +37,27 @@ async function initDatabase() {
         pontos_ganhos INT DEFAULT 0,
         processado BOOLEAN DEFAULT FALSE,
         FOREIGN KEY (jogo_id) REFERENCES jogos(id),
-        UNIQUE (email, jogo_id)
+        UNIQUE (username, jogo_id)
       );
     `);
+
+    // Migração de Segurança: Se a tabela antiga permitiu duplicidades por email, nós limpamos
+    await pool.query(`
+      DELETE FROM palpites
+      WHERE id NOT IN (
+          SELECT MAX(id)
+          FROM palpites
+          GROUP BY username, jogo_id
+      );
+    `);
+
+    // Remove a constraint antiga (baseada em email) e força a nova (baseada em username)
+    try {
+      await pool.query(`ALTER TABLE palpites DROP CONSTRAINT IF EXISTS palpites_email_jogo_id_key;`);
+      await pool.query(`ALTER TABLE palpites ADD CONSTRAINT palpites_username_jogo_id_key UNIQUE (username, jogo_id);`);
+    } catch (e) {
+      // Se a constraint nova já existir, segue a vida
+    }
 
     console.log('Tabelas verificadas/criadas com sucesso no PostgreSQL.');
   } catch (error) {
