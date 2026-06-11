@@ -121,7 +121,8 @@ app.get('/api/palpites/:username', async (req, res) => {
   const { username } = req.params;
 
   try {
-    const query = `
+    // Query para pegar os palpites
+    const queryPalpites = `
       SELECT 
         p.jogo_id,
         j.time_a,
@@ -136,13 +137,31 @@ app.get('/api/palpites/:username', async (req, res) => {
       ORDER BY j.data_jogo ASC;
     `;
 
-    const { rows: resultados } = await pool.query(query, [username.toLowerCase()]);
+    // Query para pegar a posição do usuário no ranking global
+    const queryPosicao = `
+      WITH Ranking AS (
+        SELECT 
+            username,
+            COALESCE(SUM(pontos_ganhos), 0)::int as total_pontos,
+            COUNT(*) FILTER (WHERE pontos_ganhos = 5)::int as cravadas,
+            RANK() OVER (ORDER BY COALESCE(SUM(pontos_ganhos), 0) DESC, COUNT(*) FILTER (WHERE pontos_ganhos = 5) DESC, username ASC) as posicao
+        FROM palpites
+        WHERE processado = true
+        GROUP BY username
+      )
+      SELECT posicao FROM Ranking WHERE username = $1;
+    `;
+
+    const { rows: resultados } = await pool.query(queryPalpites, [username.toLowerCase()]);
+    const { rows: rankRows } = await pool.query(queryPosicao, [username.toLowerCase()]);
 
     if (resultados.length === 0) {
       return res.status(404).json({ message: 'Nenhum palpite encontrado para este usuário.' });
     }
 
-    res.status(200).json({ username, palpites: resultados });
+    const posicao = rankRows.length > 0 ? parseInt(rankRows[0].posicao, 10) : null;
+
+    res.status(200).json({ username, posicao, palpites: resultados });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erro ao buscar palpites.' });
