@@ -275,7 +275,7 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
   }
 });
 
-// Endpoint de Ranking (Top 10)
+// Endpoint de Ranking Completo
 app.get('/api/ranking', async (req, res) => {
   try {
     const query = `
@@ -289,8 +289,7 @@ app.get('/api/ranking', async (req, res) => {
       ORDER BY 
           total_pontos DESC,
           cravadas DESC,
-          username ASC
-      LIMIT 10;
+          username ASC;
     `;
     const { rows } = await pool.query(query);
     
