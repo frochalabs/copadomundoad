@@ -15,6 +15,7 @@ export default function UserPage() {
   const [palpites, setPalpites] = useState<Palpite[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [teamSearch, setTeamSearch] = useState("");
@@ -57,8 +58,8 @@ export default function UserPage() {
         </div>
         <h3 className="text-xl font-bold text-slate-200 mb-2">Ops! Alguma coisa deu errado.</h3>
         <p className="text-slate-400 mb-8">{error || "Nenhum palpite encontrado para esse usuário."}</p>
-        <button 
-          onClick={() => router.push("/home")} 
+        <button
+          onClick={() => router.push("/home")}
           className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-colors font-semibold"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar para o início
@@ -77,31 +78,45 @@ export default function UserPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentPalpites = filteredPalpites.slice(startIndex, startIndex + itemsPerPage);
 
+  const totalPontos = palpites.reduce((acc: number, p: Palpite) => acc + (p.pontos_ganhos || 0), 0);
+  const acertos = palpites.filter((p: Palpite) => (p.pontos_ganhos || 0) > 0).length;
+
   return (
     <main className="min-h-screen relative bg-[#051020] p-6 md:p-12 pb-24 overflow-hidden">
       {/* Fundo Decorativo Estático */}
       <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-[#10B981]/10 to-transparent pointer-events-none -z-10 blur-3xl"></div>
-      
+
       <div className="max-w-6xl mx-auto w-full relative z-10">
-        
+
         {/* Header de Navegação */}
-        <button 
-          onClick={() => router.push("/home")} 
+        <button
+          onClick={() => router.push("/home")}
           className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 font-medium w-fit"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar para Dashboard
         </button>
 
         {/* Resumo do Usuário */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col gap-6 bg-white/[0.02] border border-white/5 rounded-3xl p-6 md:p-8 backdrop-blur-sm"
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-5">
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden border-4 border-white/10 shadow-xl shrink-0 bg-slate-900">
-                <img src={avatarUrl} alt={`Avatar de ${username}`} className="h-full w-full object-cover" />
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden border-4 border-white/10 shadow-xl shrink-0 bg-slate-900 flex items-center justify-center">
+                {!imageError ? (
+                  <img
+                    src={avatarUrl}
+                    alt={`Avatar de ${username}`}
+                    className="h-full w-full object-cover"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <span className="text-3xl sm:text-4xl font-bold text-slate-400 uppercase">
+                    {username.charAt(0)}
+                  </span>
+                )}
               </div>
               <div className="text-left">
                 <h2 className="text-xs sm:text-sm text-slate-400 font-bold uppercase tracking-[0.2em] mb-1">Palpites de:</h2>
@@ -113,32 +128,22 @@ export default function UserPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/5 pt-6">
             <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 flex flex-col">
               <span className="text-sm text-slate-400 mb-2 flex items-center gap-2"><Trophy className="h-5 w-5 text-yellow-500" /> Pontuação atual</span>
-              <span className="text-4xl sm:text-5xl font-black text-white">0 <span className="text-lg sm:text-xl font-medium text-slate-500">pts</span></span>
+              <span className="text-4xl sm:text-5xl font-black text-white">{totalPontos} <span className="text-lg sm:text-xl font-medium text-slate-500">pts</span></span>
               <span className="text-xs text-slate-500 mt-2 font-medium">Máximo possível: {palpites.length * 5} pts</span>
             </div>
             <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 flex flex-col">
-              <span className="text-sm text-slate-400 mb-2 flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#10B981]" /> Acertos possíveis</span>
-              <span className="text-4xl sm:text-5xl font-black text-white">0 <span className="text-lg sm:text-xl font-medium text-slate-500">/ {palpites.length}</span></span>
+              <span className="text-sm text-slate-400 mb-2 flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#10B981]" /> Jogos pontuados</span>
+              <span className="text-4xl sm:text-5xl font-black text-white">{acertos} <span className="text-lg sm:text-xl font-medium text-slate-500">/ {palpites.length}</span></span>
               <span className="text-xs text-slate-500 mt-2 font-medium">Total de jogos no bolão</span>
             </div>
           </div>
         </motion.div>
 
-        {/* ALERTA DE INÍCIO */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-center gap-4 text-blue-300 text-sm sm:text-base font-medium mt-6 shadow-inner"
-        >
-          <span className="text-3xl">⚽</span>
-          Nenhum jogo iniciado ainda. Volte após o primeiro jogo para ver a pontuação real.
-        </motion.div>
 
         {/* Busca e Lista */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full mt-12 mb-8 gap-4">
           <h3 className="text-2xl font-black text-white uppercase tracking-wider">Todos os palpites</h3>
-          
+
           <div className="relative flex items-center bg-white/5 rounded-xl border border-white/10 px-4 py-3 focus-within:border-[#10B981]/50 focus-within:bg-white/10 w-full sm:w-72 transition-all">
             <Search className="h-5 w-5 text-slate-400 mr-3 shrink-0" />
             <input
