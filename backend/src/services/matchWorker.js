@@ -41,21 +41,33 @@ const iniciarWorker = () => {
         } else if (!SIMULAR_JOGO_ID) {
           // Buscando os dados oficiais da API football-data.org (só roda se NÃO estivermos simulando um jogo manualmente)
           try {
-            console.log(`[Worker] Consultando API externa para o jogo da API ID ${jogo.api_id} (Local: ${jogo.time_a} x ${jogo.time_b})`);
-            const res = await fetch(`https://api.football-data.org/v4/matches${jogo.api_id}`, {
+            const apiIdClean = String(jogo.api_id).replace(/^\//, '');
+            console.log(`[Worker] Consultando API externa (Head2Head) para o jogo da API ID ${apiIdClean} (Local: ${jogo.time_a} x ${jogo.time_b})`);
+            const res = await fetch(`https://api.football-data.org/v4/matches/${apiIdClean}/head2head?limit=15`, {
               headers: { 'X-Auth-Token': process.env.API_KEY || '' }
             });
-            apiData = await res.json();
+            const h2hData = await res.json();
+            
+            // O endpoint head2head retorna um array 'matches'. Procuramos o nosso jogo específico nele.
+            if (h2hData && Array.isArray(h2hData.matches)) {
+              apiData = h2hData.matches.find(m => String(m.id) === apiIdClean) || h2hData.matches[0];
+            }
           } catch (err) {
             console.error(`[Worker] Falha ao consultar a API para o jogo ${jogo.id}:`, err);
           }
         }
 
         if (apiData && apiData.status === 'FINISHED') {
-          const golsA = apiData.score.fullTime.home;
-          const golsB = apiData.score.fullTime.away;
+          const golsA = apiData.score?.fullTime?.home;
+          const golsB = apiData.score?.fullTime?.away;
 
-          await processarJogo(client, jogo.id, golsA, golsB);
+          // Apenas processa se a API já tiver preenchido os gols.
+          // Às vezes o status muda para FINISHED antes do placar ser inserido.
+          if (golsA !== null && golsB !== null && golsA !== undefined && golsB !== undefined) {
+            await processarJogo(client, jogo.id, golsA, golsB);
+          } else {
+            console.log(`[Worker] Jogo ${jogo.id} consta como FINISHED, mas API ainda não liberou o placar. Aguardando...`);
+          }
         }
       }
     } catch (error) {
