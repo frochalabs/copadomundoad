@@ -13,6 +13,7 @@ export default function UserPage() {
   const username = decodeURIComponent(params.username as string);
 
   const [palpites, setPalpites] = useState<Palpite[]>([]);
+  const [posicao, setPosicao] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
@@ -32,6 +33,7 @@ export default function UserPage() {
       try {
         const data = await fetchUserPalpites(username);
         setPalpites(data.palpites);
+        setPosicao(data.posicao ?? null);
       } catch (err: any) {
         setError(err.message || "Erro ao carregar palpites.");
       } finally {
@@ -121,6 +123,22 @@ export default function UserPage() {
               <div className="text-left">
                 <h2 className="text-xs sm:text-sm text-slate-400 font-bold uppercase tracking-[0.2em] mb-1">Palpites de:</h2>
                 <p className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">{username}</p>
+                {posicao !== null && (
+                  <div className="mt-3 flex items-center">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs sm:text-sm font-bold tracking-wide ${
+                      posicao === 1 
+                        ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20 shadow-[0_0_10px_rgba(250,204,21,0.1)]' 
+                        : posicao === 2 
+                        ? 'bg-slate-300/10 text-slate-300 border-slate-300/20'
+                        : posicao === 3
+                        ? 'bg-orange-400/10 text-orange-400 border-orange-400/20'
+                        : 'bg-white/5 text-slate-400 border-white/10'
+                    }`}>
+                      <Trophy className="w-3.5 h-3.5" />
+                      {posicao}º no Ranking Geral
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

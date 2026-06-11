@@ -10,6 +10,7 @@ export interface Palpite {
 
 export interface ApiResponse {
   username: string;
+  posicao?: number | null;
   palpites: Palpite[];
 }
 
