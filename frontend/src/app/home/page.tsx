@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import { Search, Loader2, AlertCircle, ArrowRight, Trophy } from "lucide-react";
 import { fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, TrendingGame, ContrarianBet } from "@/lib/api";
 import { TrendingGames } from "@/components/TrendingGames";
 import { ContrarianBets } from "@/components/ContrarianBets";
@@ -201,6 +201,13 @@ export default function Home() {
                   className="w-full sm:w-auto flex items-center justify-center bg-gradient-to-br from-[#10B981] to-[#047857] text-white border-none rounded-[5px] px-[24px] py-[10px] cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-[2px] hover:shadow-[0_4px_15px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed font-bold text-lg"
                 >
                   {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Buscar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/ranking')}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 text-slate-300 border border-white/10 rounded-[5px] px-[24px] py-[10px] cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-[2px] hover:bg-white/10 hover:border-yellow-500/50 hover:text-white font-bold text-base"
+                >
+                  <Trophy className="w-5 h-5 text-yellow-500" /> Ranking
                 </button>
               </div>
             </form>

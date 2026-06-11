@@ -94,50 +94,71 @@ export default function RankingPage() {
           </h1>
         </div>
 
-        {/* PÓDIO */}
+        {/* PÓDIO PREMIUM */}
         {showPodium && (
-          <div className="flex flex-col sm:flex-row items-end justify-center gap-4 sm:gap-6 mb-16 mt-12">
+          <div className="flex flex-row items-end justify-center gap-2 sm:gap-4 mb-16 mt-20 px-2 h-auto">
             {/* 2º LUGAR */}
             {top3[1] && (
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-col items-center w-full sm:w-1/3 order-2 sm:order-1 cursor-pointer hover:scale-105 transition-transform" onClick={() => router.push(`/user/${encodeURIComponent(top3[1].username)}`)}>
-                <div className="relative mb-3">
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-300 text-slate-900 font-black px-3 py-0.5 rounded-full text-xs z-20 shadow-lg border-2 border-[#051020]">2º</div>
-                  <UserAvatar username={top3[1].username} sizeClass="w-20 h-20 sm:w-24 sm:h-24 border-[3px] border-slate-300/80" />
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} 
+                onClick={() => router.push(`/user/${encodeURIComponent(top3[1].username)}`)}
+                className="relative flex flex-col items-center w-[30%] sm:w-[28%] cursor-pointer group"
+              >
+                <div className="absolute -top-10 sm:-top-14 z-20">
+                  <UserAvatar username={top3[1].username} sizeClass="w-16 h-16 sm:w-20 sm:h-20 border-[3px] border-[#051020] shadow-[0_0_15px_rgba(148,163,184,0.3)] ring-2 ring-slate-300/50 group-hover:scale-105 transition-transform duration-300" />
                 </div>
-                <h2 className="text-base sm:text-lg font-bold text-white text-center line-clamp-1">{top3[1].username.split('.')[0]}</h2>
-                <div className="flex flex-col items-center mt-1">
-                  <p className="text-xl font-black text-slate-300">{top3[1].total_pontos} <span className="text-xs font-medium text-slate-400">pts</span></p>
-                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5"><Medal className="w-3 h-3" /> {top3[1].cravadas} cravadas</p>
+                <div className="w-full bg-gradient-to-t from-slate-500/[0.05] to-slate-300/[0.1] border border-white/5 border-t-slate-400/50 rounded-t-xl sm:rounded-t-2xl pt-10 sm:pt-14 pb-4 sm:pb-6 flex flex-col items-center group-hover:bg-slate-300/[0.15] transition-colors relative overflow-hidden h-[160px] sm:h-[200px] justify-end">
+                  <div className="absolute top-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-60"></div>
+                  <span className="text-6xl sm:text-8xl font-black text-slate-300/[0.08] absolute bottom-0 -z-10 select-none">2</span>
+                  <h2 className="text-xs sm:text-base font-bold text-slate-200 text-center line-clamp-1 mb-1">{top3[1].username.split('.')[0]}</h2>
+                  <div className="bg-black/30 rounded-lg px-2 py-1 mb-1 border border-white/5 z-10">
+                    <p className="text-sm sm:text-xl font-black text-slate-300">{top3[1].total_pontos} <span className="text-[10px] text-slate-500 font-medium">pts</span></p>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-slate-400 flex items-center gap-1 font-medium z-10"><Medal className="w-3 h-3" /> {top3[1].cravadas} <span className="hidden sm:inline">cravadas</span></p>
                 </div>
               </motion.div>
             )}
 
             {/* 1º LUGAR */}
             {top3[0] && (
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="flex flex-col items-center w-full sm:w-1/3 order-1 sm:order-2 mb-6 sm:mb-8 cursor-pointer hover:scale-105 transition-transform" onClick={() => router.push(`/user/${encodeURIComponent(top3[0].username)}`)}>
-                <div className="relative mb-4">
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-300 to-yellow-500 text-yellow-950 font-black px-4 py-0.5 rounded-full text-sm z-20 shadow-xl border-2 border-[#051020]">1º</div>
-                  <UserAvatar username={top3[0].username} sizeClass="w-28 h-28 sm:w-32 sm:h-32 border-[4px] border-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.2)]" />
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} 
+                onClick={() => router.push(`/user/${encodeURIComponent(top3[0].username)}`)}
+                className="relative flex flex-col items-center w-[38%] sm:w-[35%] cursor-pointer group z-10"
+              >
+                <div className="absolute -top-20 sm:-top-28 z-30 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 sm:w-12 sm:h-12"><path d="m2 4 3 12h14l3-12-6 7-4-11-4 11z"/><path d="M3 21h18v-2H3v2z"/></svg>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-400 text-center line-clamp-1">{top3[0].username.split('.')[0]}</h2>
-                <div className="flex flex-col items-center mt-1">
-                  <p className="text-3xl font-black text-yellow-400">{top3[0].total_pontos} <span className="text-sm font-medium text-yellow-500/70">pts</span></p>
-                  <p className="text-xs text-yellow-500/60 flex items-center gap-1 mt-1"><Medal className="w-3 h-3" /> {top3[0].cravadas} cravadas</p>
+                <div className="absolute -top-14 sm:-top-20 z-20">
+                  <UserAvatar username={top3[0].username} sizeClass="w-20 h-20 sm:w-28 sm:h-28 border-[4px] border-[#051020] shadow-[0_0_20px_rgba(250,204,21,0.4)] ring-[3px] ring-yellow-400/80 group-hover:scale-105 transition-transform duration-300" />
+                </div>
+                <div className="w-full bg-gradient-to-t from-yellow-500/[0.05] to-yellow-500/[0.2] border border-yellow-500/20 border-t-yellow-400 rounded-t-xl sm:rounded-t-2xl pt-12 sm:pt-16 pb-6 sm:pb-8 flex flex-col items-center group-hover:bg-yellow-500/[0.25] transition-colors shadow-[0_-5px_30px_rgba(250,204,21,0.15)] relative overflow-hidden h-[190px] sm:h-[240px] justify-end">
+                  <div className="absolute top-0 w-full h-[2px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-80"></div>
+                  <span className="text-7xl sm:text-9xl font-black text-yellow-500/[0.12] absolute bottom-0 -z-10 select-none">1</span>
+                  <h2 className="text-sm sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-yellow-500 text-center line-clamp-1 mb-1.5">{top3[0].username.split('.')[0]}</h2>
+                  <div className="bg-black/40 rounded-xl px-3 sm:px-4 py-1.5 mb-1.5 border border-yellow-500/30 backdrop-blur-sm shadow-inner z-10">
+                    <p className="text-lg sm:text-3xl font-black text-yellow-400">{top3[0].total_pontos} <span className="text-[10px] sm:text-xs text-yellow-500/60 font-bold">pts</span></p>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-yellow-500/80 flex items-center gap-1 font-bold z-10"><Medal className="w-3 h-3 sm:w-4 sm:h-4" /> {top3[0].cravadas} <span className="hidden sm:inline">cravadas</span></p>
                 </div>
               </motion.div>
             )}
 
             {/* 3º LUGAR */}
             {top3[2] && (
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="flex flex-col items-center w-full sm:w-1/3 order-3 cursor-pointer hover:scale-105 transition-transform" onClick={() => router.push(`/user/${encodeURIComponent(top3[2].username)}`)}>
-                <div className="relative mb-3">
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-orange-400 text-orange-950 font-black px-3 py-0.5 rounded-full text-xs z-20 shadow-lg border-2 border-[#051020]">3º</div>
-                  <UserAvatar username={top3[2].username} sizeClass="w-20 h-20 border-[3px] border-orange-400/80" />
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} 
+                onClick={() => router.push(`/user/${encodeURIComponent(top3[2].username)}`)}
+                className="relative flex flex-col items-center w-[30%] sm:w-[28%] cursor-pointer group"
+              >
+                <div className="absolute -top-8 sm:-top-12 z-20">
+                  <UserAvatar username={top3[2].username} sizeClass="w-14 h-14 sm:w-16 sm:h-16 border-[3px] border-[#051020] shadow-[0_0_15px_rgba(251,146,60,0.2)] ring-2 ring-orange-400/50 group-hover:scale-105 transition-transform duration-300" />
                 </div>
-                <h2 className="text-base font-bold text-white text-center line-clamp-1">{top3[2].username.split('.')[0]}</h2>
-                <div className="flex flex-col items-center mt-1">
-                  <p className="text-xl font-black text-orange-400">{top3[2].total_pontos} <span className="text-xs font-medium text-orange-500/70">pts</span></p>
-                  <p className="text-xs text-orange-500/60 flex items-center gap-1 mt-0.5"><Medal className="w-3 h-3" /> {top3[2].cravadas} cravadas</p>
+                <div className="w-full bg-gradient-to-t from-orange-400/[0.03] to-orange-400/[0.08] border border-white/5 border-t-orange-400/50 rounded-t-xl sm:rounded-t-2xl pt-8 sm:pt-12 pb-4 sm:pb-5 flex flex-col items-center group-hover:bg-orange-400/[0.12] transition-colors relative overflow-hidden h-[140px] sm:h-[180px] justify-end">
+                  <div className="absolute top-0 w-full h-[2px] bg-gradient-to-r from-transparent via-orange-400 to-transparent opacity-60"></div>
+                  <span className="text-6xl sm:text-8xl font-black text-orange-400/[0.08] absolute bottom-0 -z-10 select-none">3</span>
+                  <h2 className="text-xs sm:text-base font-bold text-slate-200 text-center line-clamp-1 mb-1">{top3[2].username.split('.')[0]}</h2>
+                  <div className="bg-black/30 rounded-lg px-2 py-1 mb-1 border border-white/5 z-10">
+                    <p className="text-sm sm:text-lg font-black text-orange-400">{top3[2].total_pontos} <span className="text-[9px] text-orange-500/60 font-medium">pts</span></p>
+                  </div>
+                  <p className="text-[9px] sm:text-xs text-orange-400/70 flex items-center gap-1 font-medium z-10"><Medal className="w-3 h-3" /> {top3[2].cravadas} <span className="hidden sm:inline">cravadas</span></p>
                 </div>
               </motion.div>
             )}
