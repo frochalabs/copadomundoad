@@ -6,6 +6,7 @@ import { Palpite, fetchUserPalpites } from "@/lib/api";
 import { MatchCard } from "@/components/MatchCard";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export default function UserPage() {
   const params = useParams();
@@ -16,17 +17,10 @@ export default function UserPage() {
   const [posicao, setPosicao] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [imageError, setImageError] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [teamSearch, setTeamSearch] = useState("");
   const itemsPerPage = 24;
-
-  const baseUrl = "https://res.cloudinary.com/dhj0lwxgq/image/upload/";
-  const transformations = "w_200,h_200,c_scale,f_auto,q_auto/";
-  const avatarUrl = `${baseUrl}${transformations}${encodeURIComponent(
-    username.replace(/\s+/g, ".")
-  )}.jpg`;
 
   useEffect(() => {
     const loadPalpites = async () => {
@@ -106,20 +100,7 @@ export default function UserPage() {
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-5">
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full overflow-hidden border-4 border-white/10 shadow-xl shrink-0 bg-slate-900 flex items-center justify-center">
-                {!imageError ? (
-                  <img
-                    src={avatarUrl}
-                    alt={`Avatar de ${username}`}
-                    className="h-full w-full object-cover"
-                    onError={() => setImageError(true)}
-                  />
-                ) : (
-                  <span className="text-3xl sm:text-4xl font-bold text-slate-400 uppercase">
-                    {username.charAt(0)}
-                  </span>
-                )}
-              </div>
+              <UserAvatar username={username} className="h-20 w-20 sm:h-24 sm:w-24 text-3xl sm:text-4xl border-4 border-white/10 shadow-xl" />
               <div className="text-left">
                 <h2 className="text-xs sm:text-sm text-slate-400 font-bold uppercase tracking-[0.2em] mb-1">Palpites de:</h2>
                 <p className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400">{username}</p>

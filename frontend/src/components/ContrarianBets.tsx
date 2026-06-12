@@ -3,21 +3,13 @@
 import { motion } from "framer-motion";
 import { ContrarianBet } from "@/lib/api";
 import { Flame, Target, Users, Zap } from "lucide-react";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface ContrarianBetsProps {
   bets: ContrarianBet[];
 }
 
 export function ContrarianBets({ bets }: ContrarianBetsProps) {
-  const baseUrl = "https://res.cloudinary.com/dhj0lwxgq/image/upload/";
-  const transformations = "w_200,h_200,c_scale,f_auto,q_auto/";
-
-  const getAvatarUrl = (username: string) => {
-    return `${baseUrl}${transformations}${encodeURIComponent(
-      username.trim().toLowerCase().replace(/\s+/g, ".")
-    )}.jpg`;
-  };
-
   if (bets.length === 0) {
     return null;
   }
@@ -61,13 +53,7 @@ export function ContrarianBets({ bets }: ContrarianBetsProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-6">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="h-12 w-12 rounded-full overflow-hidden border border-white/10 shadow-lg shrink-0 bg-slate-900">
-                    <img
-                      src={getAvatarUrl(bet.username)}
-                      alt={bet.username}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
+                  <UserAvatar username={bet.username} className="h-12 w-12 text-xl border border-white/10 shadow-lg" />
                   {/* Ícone sobreposto */}
                   <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#FBBF24] text-slate-900 shadow-sm">
                     <Zap className="h-3 w-3 fill-current" />
