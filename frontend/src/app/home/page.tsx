@@ -75,7 +75,7 @@ export default function Home() {
       // Faz uma busca para validar se o usuário existe.
       // Se não existir, a própria API vai jogar um erro 404 caindo no CATCH.
       await fetchUserPalpites(targetUser);
-      
+
       // Se passou direto, o usuário existe! Vai para a página dele.
       router.push(`/user/${encodeURIComponent(targetUser.trim().toLowerCase())}`);
     } catch (err: any) {
@@ -96,9 +96,9 @@ export default function Home() {
         {/* Fundo do loading (Mesh estático e leve) */}
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#10B981] rounded-full blur-[150px] opacity-10 pointer-events-none -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#FBBF24] rounded-full blur-[150px] opacity-[0.05] pointer-events-none translate-x-1/3 animate-pulse"></div>
-        
+
         <div className="relative z-10 flex flex-col items-center justify-center max-w-md w-full gap-8">
-          
+
           {/* Animação Circular Central (Bola de Futebol girando) */}
           <div className="relative flex items-center justify-center">
             {/* Círculo pontilhado de loading */}
@@ -110,14 +110,14 @@ export default function Home() {
               ⚽
             </div>
           </div>
-          
+
           <div className="flex flex-col items-center gap-3 min-h-[80px]">
             <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] to-[#FBBF24] tracking-widest uppercase">
               Bolão da Copa AD
             </h2>
             <div className="h-6 relative w-full flex justify-center">
               <AnimatePresence mode="wait">
-                <motion.p 
+                <motion.p
                   key={loadingPhraseIndex}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -188,7 +188,7 @@ export default function Home() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="ex: fabiano.sales"
+                  placeholder="ex: joao.silva"
                   className="border-none bg-transparent text-white p-[5px] pl-2 w-full outline-none placeholder-slate-400 text-lg sm:text-base"
                 />
               </div>
@@ -214,7 +214,7 @@ export default function Home() {
 
             {/* Error Message na Busca */}
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-2 text-left bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2 font-medium"
@@ -224,7 +224,7 @@ export default function Home() {
               </motion.div>
             )}
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-left"
@@ -237,9 +237,9 @@ export default function Home() {
                 <p className="text-blue-300/80 mb-2">
                   Eles só aparecerão aqui após você preencher o formulário oficial.
                 </p>
-                <a 
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSf_kV497Aonbzxo0-SVJun97lO0CkqvZVSzVDxiTB8vjBCBJg/viewform?usp=dialog" 
-                  target="_blank" 
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSf_kV497Aonbzxo0-SVJun97lO0CkqvZVSzVDxiTB8vjBCBJg/viewform?usp=dialog"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[#10B981] hover:text-[#34d399] font-semibold transition-colors w-fit"
                 >
