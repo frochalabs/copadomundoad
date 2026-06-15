@@ -238,7 +238,7 @@ export default function Home() {
                   Eles só aparecerão aqui após você preencher o formulário oficial.
                 </p>
                 <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSf_kV497Aonbzxo0-SVJun97lO0CkqvZVSzVDxiTB8vjBCBJg/viewform?usp=dialog"
+                  href="https://forms.gle/ekP3j6fEA1aWSTzq5"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[#10B981] hover:text-[#34d399] font-semibold transition-colors w-fit"
