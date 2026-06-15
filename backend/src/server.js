@@ -156,21 +156,44 @@ app.get('/api/palpites/:username', async (req, res) => {
 
     // Query para pegar a posição do usuário no ranking global
     const queryPosicao = `
-      WITH Ranking AS (
+      WITH TodosOsPontos AS (
+          SELECT username, pontos_ganhos, (pontos_ganhos = 5) as is_cravada FROM palpites WHERE processado = true
+          UNION ALL
+          SELECT username, pontos_ganhos, false as is_cravada FROM respostas_extras WHERE processada = true
+      ),
+      Ranking AS (
         SELECT 
             username,
             COALESCE(SUM(pontos_ganhos), 0)::int as total_pontos,
-            COUNT(*) FILTER (WHERE pontos_ganhos = 5)::int as cravadas,
-            RANK() OVER (ORDER BY COALESCE(SUM(pontos_ganhos), 0) DESC, COUNT(*) FILTER (WHERE pontos_ganhos = 5) DESC, username ASC) as posicao
-        FROM palpites
-        WHERE processado = true
+            COUNT(*) FILTER (WHERE is_cravada = true)::int as cravadas,
+            RANK() OVER (ORDER BY COALESCE(SUM(pontos_ganhos), 0) DESC, COUNT(*) FILTER (WHERE is_cravada = true) DESC, username ASC) as posicao
+        FROM TodosOsPontos
         GROUP BY username
       )
       SELECT posicao FROM Ranking WHERE username = $1;
     `;
 
+    // Nova query para buscar as respostas extras
+    const queryExtras = `
+      SELECT 
+        r.id,
+        r.pergunta_id,
+        r.resposta_escolhida,
+        r.pontos_ganhos,
+        r.processada,
+        p.descricao,
+        p.resposta_correta,
+        p.pontos_valendo,
+        p.status
+      FROM respostas_extras r
+      JOIN perguntas_extras p ON r.pergunta_id = p.id
+      WHERE r.username = $1
+      ORDER BY p.id ASC;
+    `;
+
     const { rows: resultados } = await pool.query(queryPalpites, [username.toLowerCase()]);
     const { rows: rankRows } = await pool.query(queryPosicao, [username.toLowerCase()]);
+    const { rows: palpitesExtras } = await pool.query(queryExtras, [username.toLowerCase()]);
 
     if (resultados.length === 0) {
       return res.status(404).json({ message: 'Nenhum palpite encontrado para este usuário.' });
@@ -178,7 +201,7 @@ app.get('/api/palpites/:username', async (req, res) => {
 
     const posicao = rankRows.length > 0 ? parseInt(rankRows[0].posicao, 10) : null;
 
-    res.status(200).json({ username, posicao, palpites: resultados });
+    res.status(200).json({ username, posicao, palpites: resultados, palpitesExtras });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erro ao buscar palpites.' });

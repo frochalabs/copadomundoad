@@ -207,6 +207,128 @@
           ]
         }
       }
+    },
+    {
+      "name": "10. GET Perguntas Bônus Ativas",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3001/api/perguntas-ativas",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "perguntas-ativas"
+          ]
+        }
+      }
+    },
+    {
+      "name": "11. POST Enviar Palpite Bônus",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"fabiano.sales@adpromotora.com.br\",\n  \"pergunta_id\": 1,\n  \"resposta\": \"Sim\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/palpites-extras",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "palpites-extras"
+          ]
+        }
+      }
+    },
+    {
+      "name": "12. POST Admin: Criar Pergunta Bônus",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"descricao\": \"Endrick vai fazer gol no primeiro jogo?\",\n  \"opcoes\": [\"Sim\", \"Não\"],\n  \"pontos_valendo\": 3,\n  \"jogo_id\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/admin/criar-pergunta",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "admin",
+            "criar-pergunta"
+          ]
+        }
+      }
+    },
+    {
+      "name": "13. POST Admin: Resolver Pergunta Bônus",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pergunta_id\": 1,\n  \"resposta_correta\": \"Sim\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/admin/resolver-pergunta",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "admin",
+            "resolver-pergunta"
+          ]
+        }
+      }
     }
   ]
 }
