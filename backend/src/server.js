@@ -315,12 +315,28 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
 app.get('/api/ranking', async (req, res) => {
   try {
     const query = `
+      WITH TodosOsPontos AS (
+          SELECT 
+              username,
+              pontos_ganhos,
+              (pontos_ganhos = 5) as is_cravada
+          FROM palpites
+          WHERE processado = true
+          
+          UNION ALL
+          
+          SELECT 
+              username,
+              pontos_ganhos,
+              false as is_cravada
+          FROM respostas_extras
+          WHERE processada = true
+      )
       SELECT 
           username,
           COALESCE(SUM(pontos_ganhos), 0)::int as total_pontos,
-          COUNT(*) FILTER (WHERE pontos_ganhos = 5)::int as cravadas
-      FROM palpites
-      WHERE processado = true
+          COUNT(*) FILTER (WHERE is_cravada = true)::int as cravadas
+      FROM TodosOsPontos
       GROUP BY username
       ORDER BY 
           total_pontos DESC,
@@ -459,6 +475,142 @@ app.post('/api/jogos', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// Endpoint para buscar perguntas extras ativas
+app.get('/api/perguntas-ativas', async (req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM perguntas_extras WHERE status = 'ABERTA' ORDER BY id ASC");
+    res.status(200).json({ perguntas: rows });
+  } catch (error) {
+    console.error('Erro ao buscar perguntas ativas:', error);
+    res.status(500).json({ error: 'Erro ao buscar perguntas ativas.' });
+  }
+});
+
+// Endpoint para enviar um palpite de pergunta extra
+app.post('/api/palpites-extras', async (req, res) => {
+  const { email, pergunta_id, resposta } = req.body;
+
+  if (!email || !pergunta_id || !resposta) {
+    return res.status(400).json({ error: 'Dados incompletos. Envie email, pergunta_id e resposta.' });
+  }
+
+  const username = email.split('@')[0].toLowerCase();
+
+  try {
+    // Verifica se a pergunta ainda está aberta
+    const { rows: pergunta } = await pool.query('SELECT status FROM perguntas_extras WHERE id = $1', [pergunta_id]);
+    if (pergunta.length === 0 || pergunta[0].status !== 'ABERTA') {
+      return res.status(403).json({ error: 'Esta pergunta não está mais aceitando respostas.' });
+    }
+
+    const query = `
+      INSERT INTO respostas_extras (pergunta_id, username, resposta_escolhida)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (username, pergunta_id) 
+      DO UPDATE SET resposta_escolhida = EXCLUDED.resposta_escolhida
+    `;
+    await pool.query(query, [pergunta_id, username, resposta]);
+    
+    res.status(200).json({ message: 'Resposta salva com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao salvar palpite extra:', error);
+    res.status(500).json({ error: 'Erro ao salvar sua resposta.' });
+  }
+});
+
+// Endpoint de Administração: Criar uma nova pergunta especial
+app.post('/api/admin/criar-pergunta', async (req, res) => {
+  const { descricao, opcoes, pontos_valendo, jogo_id } = req.body;
+
+  if (!descricao || !opcoes || !Array.isArray(opcoes)) {
+    return res.status(400).json({ error: 'Envie a descricao e um array de opcoes.' });
+  }
+
+  try {
+    const query = `
+      INSERT INTO perguntas_extras (descricao, opcoes, pontos_valendo, jogo_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `;
+    const { rows } = await pool.query(query, [
+      descricao, 
+      JSON.stringify(opcoes), 
+      pontos_valendo || 2, 
+      jogo_id || null
+    ]);
+
+    res.status(201).json({ message: 'Pergunta criada com sucesso!', pergunta: rows[0] });
+  } catch (error) {
+    console.error('Erro ao criar pergunta extra:', error);
+    res.status(500).json({ error: 'Erro interno ao criar pergunta.' });
+  }
+});
+
+// Endpoint de Administração: Resolver Pergunta Especial Manualmente
+app.post('/api/admin/resolver-pergunta', async (req, res) => {
+  const { pergunta_id, resposta_correta } = req.body;
+
+  if (!pergunta_id || !resposta_correta) {
+    return res.status(400).json({ error: 'Envie o pergunta_id e a resposta_correta.' });
+  }
+
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+
+    // 1. Atualiza a tabela da pergunta dizendo qual foi o resultado oficial
+    const queryPergunta = `
+      UPDATE perguntas_extras 
+      SET resposta_correta = $1, status = 'PROCESSADA'
+      WHERE id = $2 AND status != 'PROCESSADA'
+      RETURNING pontos_valendo;
+    `;
+    const { rows: resultPergunta } = await client.query(queryPergunta, [resposta_correta, pergunta_id]);
+
+    if (resultPergunta.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Pergunta não encontrada ou já processada.' });
+    }
+
+    const pontosDaPergunta = resultPergunta[0].pontos_valendo;
+
+    // 2. Dá os pontos para quem ACERTOU
+    const queryAcertos = `
+      UPDATE respostas_extras 
+      SET pontos_ganhos = $1, processada = true
+      WHERE pergunta_id = $2 AND resposta_escolhida = $3;
+    `;
+    const { rowCount: acertos } = await client.query(queryAcertos, [pontosDaPergunta, pergunta_id, resposta_correta]);
+
+    // 3. Zera os pontos de quem ERROU
+    const queryErros = `
+      UPDATE respostas_extras 
+      SET pontos_ganhos = 0, processada = true
+      WHERE pergunta_id = $1 AND resposta_escolhida != $2;
+    `;
+    const { rowCount: erros } = await client.query(queryErros, [pergunta_id, resposta_correta]);
+
+    await client.query('COMMIT');
+    
+    res.status(200).json({ 
+      message: 'Pergunta resolvida com sucesso!',
+      estatisticas: {
+        acertos: acertos,
+        erros: erros,
+        pontos_distribuidos: acertos * pontosDaPergunta
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao resolver pergunta especial:', error);
+    res.status(500).json({ error: 'Erro interno ao processar pontuação da pergunta.' });
+  } finally {
+    client.release();
+  }
+});
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

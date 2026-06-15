@@ -59,6 +59,34 @@ async function initDatabase() {
       // Se a constraint nova já existir, segue a vida
     }
 
+    // Tabela de Perguntas Extras (Palpites Bônus)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS perguntas_extras (
+        id SERIAL PRIMARY KEY,
+        jogo_id INT,
+        descricao TEXT NOT NULL,
+        opcoes JSONB NOT NULL,
+        pontos_valendo INT DEFAULT 2,
+        resposta_correta TEXT,
+        status VARCHAR(50) DEFAULT 'ABERTA',
+        FOREIGN KEY (jogo_id) REFERENCES jogos(id) ON DELETE CASCADE
+      );
+    `);
+
+    // Tabela de Respostas Extras
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS respostas_extras (
+        id SERIAL PRIMARY KEY,
+        pergunta_id INT NOT NULL,
+        username VARCHAR(100) NOT NULL,
+        resposta_escolhida TEXT NOT NULL,
+        pontos_ganhos INT DEFAULT 0,
+        processada BOOLEAN DEFAULT FALSE,
+        FOREIGN KEY (pergunta_id) REFERENCES perguntas_extras(id) ON DELETE CASCADE,
+        UNIQUE (username, pergunta_id)
+      );
+    `);
+
     console.log('Tabelas verificadas/criadas com sucesso no PostgreSQL.');
   } catch (error) {
     console.error('Erro ao inicializar o banco de dados:', error);
