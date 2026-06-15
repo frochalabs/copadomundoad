@@ -64,36 +64,53 @@ app.post('/api/palpites', async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    // 1. Busca a data do primeiro jogo para validação de prazo
-    const { rows: firstGame } = await client.query('SELECT data_jogo FROM jogos ORDER BY data_jogo ASC LIMIT 1');
-    
-    if (firstGame.length > 0) {
-      const dataPrimeiroJogo = new Date(firstGame[0].data_jogo);
-      const hoje = new Date();
-      
-      // Zera as horas para comparar apenas a data (dia/mês/ano)
-      hoje.setHours(0, 0, 0, 0);
-      dataPrimeiroJogo.setHours(0, 0, 0, 0);
-      
-      if (hoje > dataPrimeiroJogo) {
-        await client.query('ROLLBACK');
-        return res.status(403).json({ error: 'O prazo para alterar os palpites encerrou. As alterações só eram permitidas até o dia do primeiro jogo.' });
+    const emailsPermitidos = [];
+    const temPermissao = emailsPermitidos.includes(email.toLowerCase());
+    const agora = new Date();
+
+    // 1. Busca todos os jogos enviados para validar o horário individualmente
+    const jogoIds = palpites.map(p => p.jogoId);
+
+    if (jogoIds.length > 0) {
+      const { rows: jogosInfo } = await client.query('SELECT id, data_jogo FROM jogos WHERE id = ANY($1::int[])', [jogoIds]);
+      const mapDatas = {};
+      jogosInfo.forEach(j => {
+        mapDatas[j.id] = new Date(j.data_jogo);
+      });
+
+      // 2. Insere ou atualiza apenas os palpites permitidos
+      const upsertQuery = `
+        INSERT INTO palpites (email, username, jogo_id, palpite_a, palpite_b)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (username, jogo_id) 
+        DO UPDATE SET 
+          email = EXCLUDED.email,
+          palpite_a = EXCLUDED.palpite_a, 
+          palpite_b = EXCLUDED.palpite_b
+      `;
+
+      let palpitesProcessados = 0;
+
+      for (const p of palpites) {
+        const dataDoJogo = mapDatas[p.jogoId];
+
+        // Regra: Bloqueia se o jogo não existe, ou se já começou (e o usuário não é exceção)
+        if (!dataDoJogo) continue;
+
+        if (!temPermissao && agora >= dataDoJogo) {
+          // Ignora o palpite para esse jogo específico porque o prazo já estourou
+          continue;
+        }
+
+        await client.query(upsertQuery, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
+        palpitesProcessados++;
       }
-    }
 
-    // 2. Insere ou atualiza os palpites (Sobrescrevendo os antigos caso já existam)
-    const upsertQuery = `
-      INSERT INTO palpites (email, username, jogo_id, palpite_a, palpite_b)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (username, jogo_id) 
-      DO UPDATE SET 
-        email = EXCLUDED.email,
-        palpite_a = EXCLUDED.palpite_a, 
-        palpite_b = EXCLUDED.palpite_b
-    `;
-
-    for (const p of palpites) {
-      await client.query(upsertQuery, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
+      // Se nenhum palpite pôde ser processado (todos atrasados) e o usuário mandou palpites
+      if (palpitesProcessados === 0 && palpites.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Todos os jogos enviados já começaram. Prazo encerrado para estes palpites.' });
+      }
     }
 
     await client.query('COMMIT');
@@ -311,7 +328,7 @@ app.get('/api/ranking', async (req, res) => {
           username ASC;
     `;
     const { rows } = await pool.query(query);
-    
+
     // Formatar com posição
     const ranking = rows.map((r, i) => ({
       posicao: i + 1,
@@ -344,13 +361,13 @@ app.delete('/api/jogos/:id', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    
+
     // Exclui primeiro os palpites daquele jogo
     await client.query('DELETE FROM palpites WHERE jogo_id = $1', [id]);
-    
+
     // Depois exclui o jogo
     const { rowCount } = await client.query('DELETE FROM jogos WHERE id = $1', [id]);
-    
+
     if (rowCount === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Jogo não encontrado.' });
@@ -418,7 +435,7 @@ app.post('/api/jogos', async (req, res) => {
         gols_a !== undefined ? gols_a : null,
         gols_b !== undefined ? gols_b : null
       ]);
-      
+
       // Só incrementa o proximoId e adiciona aos inseridos se ele realmente gravou no banco (não foi ignorado)
       if (rows.length > 0) {
         inseridos.push(rows[0]);

@@ -1,57 +1,5 @@
 const pool = require('../config/db');
-
-// Dicionário De-Para (Sigla TLA da API -> Nome no seu Banco em PT-BR)
-// Preencha este mapa com todos os times que estão no seu banco
-const mapaTimes = {
-  "MEX": "México",
-  "RSA": "África do Sul",
-  "KOR": "Coreia do Sul",
-  "CZE": "Tchéquia",
-  "CAN": "Canadá",
-  "BIH": "Bósnia e Herzegovina",
-  "USA": "Estados Unidos",
-  "PAR": "Paraguai",
-  "QAT": "Catar",
-  "SUI": "Suíça",
-  "BRA": "Brasil",
-  "MAR": "Marrocos",
-  "HAI": "Haiti",
-  "SCO": "Escócia",
-  "AUS": "Austrália",
-  "TUR": "Turquia",
-  "GER": "Alemanha",
-  "CUW": "Curaçao",
-  "NED": "Holanda",
-  "JPN": "Japão",
-  "CIV": "Costa do Marfim",
-  "ECU": "Equador",
-  "SWE": "Suécia",
-  "TUN": "Tunísia",
-  "ESP": "Espanha",
-  "CPV": "Cabo Verde",
-  "BEL": "Bélgica",
-  "EGY": "Egito",
-  "KSA": "Arábia Saudita",
-  "URY": "Uruguai",
-  "IRN": "Irã",
-  "NZL": "Nova Zelândia",
-  "FRA": "França",
-  "SEN": "Senegal",
-  "IRQ": "Iraque",
-  "NOR": "Noruega",
-  "ARG": "Argentina",
-  "ALG": "Argélia",
-  "AUT": "Áustria",
-  "JOR": "Jordânia",
-  "POR": "Portugal",
-  "COD": "RD Congo",
-  "ENG": "Inglaterra",
-  "CRO": "Croácia",
-  "GHA": "Gana",
-  "PAN": "Panamá",
-  "UZB": "Uzbequistão",
-  "COL": "Colômbia"
-};
+const mapaTimes = require('../utils/mapaTimes');
 
 async function syncJogos() {
   const client = await pool.connect();
