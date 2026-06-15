@@ -8,10 +8,23 @@ export interface Palpite {
   data_jogo: string;
 }
 
+export interface PalpiteExtra {
+  id: number;
+  pergunta_id: number;
+  resposta_escolhida: string;
+  pontos_ganhos: number | null;
+  processada: boolean;
+  descricao: string;
+  resposta_correta: string | null;
+  pontos_valendo: number;
+  status: string;
+}
+
 export interface ApiResponse {
   username: string;
   posicao?: number | null;
   palpites: Palpite[];
+  palpitesExtras?: PalpiteExtra[];
 }
 
 export interface TrendingGame {

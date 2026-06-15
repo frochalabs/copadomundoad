@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Search, Loader2, AlertCircle, ArrowLeft, Trophy, CheckCircle2, ChevronDown, CalendarDays, ArrowDown } from "lucide-react";
-import { Palpite, fetchUserPalpites } from "@/lib/api";
+import { Palpite, PalpiteExtra, fetchUserPalpites } from "@/lib/api";
 import { MatchCard } from "@/components/MatchCard";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -14,6 +14,8 @@ export default function UserPage() {
   const username = decodeURIComponent(params.username as string);
 
   const [palpites, setPalpites] = useState<Palpite[]>([]);
+  const [palpitesExtras, setPalpitesExtras] = useState<PalpiteExtra[]>([]);
+  const [activeTab, setActiveTab] = useState<"jogos" | "bonus">("jogos");
   const [posicao, setPosicao] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +31,7 @@ export default function UserPage() {
       try {
         const data = await fetchUserPalpites(username);
         setPalpites(data.palpites);
+        setPalpitesExtras(data.palpitesExtras || []);
         setPosicao(data.posicao ?? null);
       } catch (err: any) {
         setError(err.message || "Erro ao carregar palpites.");
@@ -91,8 +94,11 @@ export default function UserPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentPalpites = filteredPalpites.slice(startIndex, startIndex + itemsPerPage);
 
-  const totalPontos = palpites.reduce((acc: number, p: Palpite) => acc + (p.pontos_ganhos || 0), 0);
-  const acertos = palpites.filter((p: Palpite) => (p.pontos_ganhos || 0) > 0).length;
+  const totalPontosJogos = palpites.reduce((acc: number, p: Palpite) => acc + (p.pontos_ganhos || 0), 0);
+  const totalPontosBonus = palpitesExtras.reduce((acc: number, p: PalpiteExtra) => acc + (p.pontos_ganhos || 0), 0);
+  const totalPontos = totalPontosJogos + totalPontosBonus;
+  
+  const acertosJogos = palpites.filter((p: Palpite) => (p.pontos_ganhos || 0) > 0).length;
 
   return (
     <main className="min-h-screen relative bg-[#051020] p-6 md:p-12 pb-24 overflow-hidden">
@@ -148,108 +154,195 @@ export default function UserPage() {
               <span className="text-xs text-slate-500 mt-2 font-medium">Máximo possível: {palpites.length * 5} pts</span>
             </div>
             <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 flex flex-col">
-              <span className="text-sm text-slate-400 mb-2 flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#10B981]" /> Jogos pontuados</span>
-              <span className="text-4xl sm:text-5xl font-black text-white">{acertos} <span className="text-lg sm:text-xl font-medium text-slate-500">/ {palpites.length}</span></span>
-              <span className="text-xs text-slate-500 mt-2 font-medium">Total de jogos no bolão</span>
+              <span className="text-sm text-slate-400 mb-2 flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#10B981]" /> Acertos (Jogos)</span>
+              <span className="text-4xl sm:text-5xl font-black text-white">{acertosJogos} <span className="text-lg sm:text-xl font-medium text-slate-500">/ {palpites.length}</span></span>
+              <span className="text-xs text-slate-500 mt-2 font-medium">Bônus: {palpitesExtras.filter(p => (p.pontos_ganhos || 0) > 0).length} acertos</span>
             </div>
           </div>
         </motion.div>
 
 
-        {/* Busca e Lista */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full mt-12 mb-8 gap-4">
-          <h3 className="text-2xl font-black text-white uppercase tracking-wider">Todos os palpites</h3>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-            {/* Filtro de Rodada */}
-            <div className="relative group">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-[#10B981] transition-colors">
-                <CalendarDays className="w-5 h-5" />
-              </div>
-              <select
-                value={selectedRound}
-                onChange={(e) => {
-                  setSelectedRound(e.target.value === "all" ? "all" : Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="bg-[#0f172a] hover:bg-[#1e293b] border border-slate-700/50 hover:border-slate-600 focus:border-[#10B981] text-white text-sm rounded-xl pl-12 pr-10 py-3 outline-none transition-all cursor-pointer appearance-none min-w-[170px] shadow-sm font-medium w-full"
-              >
-                <option value="all" className="bg-slate-900">Todas as Rodadas</option>
-                <option value="1" className="bg-slate-900">Rodada 1 (1 a 24)</option>
-                <option value="2" className="bg-slate-900">Rodada 2 (25 a 48)</option>
-                <option value="3" className="bg-slate-900">Rodada 3 (49 a 72)</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                <ChevronDown className="w-4 h-4" />
-              </div>
-            </div>
-
-            {/* Ordenação */}
-            <button
-              onClick={() => {
-                setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                setCurrentPage(1);
-              }}
-              className="flex items-center justify-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] border border-slate-700/50 hover:border-slate-600 focus:border-[#10B981] text-white text-sm font-medium rounded-xl px-5 py-3 transition-all whitespace-nowrap shadow-sm group w-full sm:w-auto"
-            >
-              <ArrowDown className={`w-4 h-4 text-slate-400 group-hover:text-[#10B981] transition-all duration-300 ${sortOrder === "desc" ? "rotate-180" : ""}`} />
-              {sortOrder === "asc" ? "Mais Próximos" : "Mais Distantes"}
-            </button>
-
-            {/* Busca */}
-            <div className="relative flex items-center bg-[#0f172a] rounded-xl border border-slate-700/50 hover:border-slate-600 px-4 py-3 focus-within:border-[#10B981] focus-within:bg-[#1e293b] w-full sm:w-64 transition-all shadow-sm">
-              <Search className="h-5 w-5 text-slate-400 mr-3 shrink-0" />
-              <input
-                type="text"
-                placeholder="Pesquisar seleção..."
-                value={teamSearch}
-                onChange={(e) => {
-                  setTeamSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="bg-transparent border-none text-white text-sm outline-none w-full placeholder-slate-500"
-              />
-            </div>
-          </div>
+        {/* Tabs de Navegação */}
+        <div className="flex items-center gap-4 mt-12 mb-8 border-b border-white/10 pb-4">
+          <button
+            onClick={() => setActiveTab("jogos")}
+            className={`text-lg font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-xl cursor-pointer select-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+              activeTab === "jogos"
+                ? "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20"
+                : "border border-transparent text-slate-400 hover:text-white"
+            }`}
+          >
+            Jogos
+          </button>
+          <button
+            onClick={() => setActiveTab("bonus")}
+            className={`text-lg font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-xl flex items-center gap-2 cursor-pointer select-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+              activeTab === "bonus"
+                ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                : "border border-transparent text-slate-400 hover:text-white"
+            }`}
+          >
+            Perguntas Bônus
+            {palpitesExtras.length > 0 && (
+              <span className="bg-white/10 text-xs px-2 py-1 rounded-full">{palpitesExtras.length}</span>
+            )}
+          </button>
         </div>
 
-        {filteredPalpites.length === 0 ? (
-          <div className="w-full flex flex-col items-center justify-center text-center py-16 px-4 bg-white/[0.02] rounded-3xl border border-white/5">
-            <AlertCircle className="w-12 h-12 text-slate-500 mb-4 opacity-50" />
-            <h4 className="text-lg font-bold text-slate-300 mb-2">Nada encontrado</h4>
-            <p className="text-slate-500 max-w-md">
-              {teamSearch.trim() 
-                ? `Não encontramos nenhum jogo para a seleção "${teamSearch}". Verifique se o nome está correto.`
-                : "Ainda não existem palpites registrados para esta rodada específica."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentPalpites.map((palpite, index) => (
-              <MatchCard key={palpite.jogo_id} palpite={palpite} index={startIndex + index} />
-            ))}
-          </div>
+        {activeTab === "jogos" && (
+          <>
+            {/* Busca e Lista */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full mb-8 gap-4">
+              <h3 className="text-xl font-black text-white uppercase tracking-wider">Palpites da Fase de Grupos</h3>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                {/* Filtro de Rodada */}
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-[#10B981] transition-colors">
+                    <CalendarDays className="w-5 h-5" />
+                  </div>
+                  <select
+                    value={selectedRound}
+                    onChange={(e) => {
+                      setSelectedRound(e.target.value === "all" ? "all" : Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="bg-[#0f172a] hover:bg-[#1e293b] border border-slate-700/50 hover:border-slate-600 focus:border-[#10B981] text-white text-sm rounded-xl pl-12 pr-10 py-3 outline-none transition-all cursor-pointer appearance-none min-w-[170px] shadow-sm font-medium w-full"
+                  >
+                    <option value="all" className="bg-slate-900">Todas as Rodadas</option>
+                    <option value="1" className="bg-slate-900">Rodada 1 (1 a 24)</option>
+                    <option value="2" className="bg-slate-900">Rodada 2 (25 a 48)</option>
+                    <option value="3" className="bg-slate-900">Rodada 3 (49 a 72)</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* Ordenação */}
+                <button
+                  onClick={() => {
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                    setCurrentPage(1);
+                  }}
+                  className="flex items-center justify-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] border border-slate-700/50 hover:border-slate-600 focus:border-[#10B981] text-white text-sm font-medium rounded-xl px-5 py-3 transition-all whitespace-nowrap shadow-sm group w-full sm:w-auto"
+                >
+                  <ArrowDown className={`w-4 h-4 text-slate-400 group-hover:text-[#10B981] transition-all duration-300 ${sortOrder === "desc" ? "rotate-180" : ""}`} />
+                  {sortOrder === "asc" ? "Mais Próximos" : "Mais Distantes"}
+                </button>
+
+                {/* Busca */}
+                <div className="relative flex items-center bg-[#0f172a] rounded-xl border border-slate-700/50 hover:border-slate-600 px-4 py-3 focus-within:border-[#10B981] focus-within:bg-[#1e293b] w-full sm:w-64 transition-all shadow-sm">
+                  <Search className="h-5 w-5 text-slate-400 mr-3 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Pesquisar seleção..."
+                    value={teamSearch}
+                    onChange={(e) => {
+                      setTeamSearch(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-transparent border-none text-white text-sm outline-none w-full placeholder-slate-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {filteredPalpites.length === 0 ? (
+              <div className="w-full flex flex-col items-center justify-center text-center py-16 px-4 bg-white/[0.02] rounded-3xl border border-white/5">
+                <AlertCircle className="w-12 h-12 text-slate-500 mb-4 opacity-50" />
+                <h4 className="text-lg font-bold text-slate-300 mb-2">Nada encontrado</h4>
+                <p className="text-slate-500 max-w-md">
+                  {teamSearch.trim() 
+                    ? `Não encontramos nenhum jogo para a seleção "${teamSearch}". Verifique se o nome está correto.`
+                    : "Ainda não existem palpites registrados para esta rodada específica."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentPalpites.map((palpite, index) => (
+                  <MatchCard key={palpite.jogo_id} palpite={palpite} index={startIndex + index} />
+                ))}
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-3 sm:gap-6 mt-12">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors shadow-sm"
+                >
+                  Anterior
+                </button>
+                <span className="text-slate-400 text-sm font-bold min-w-[120px] text-center bg-slate-900/50 py-2 rounded-lg border border-white/5">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors shadow-sm"
+                >
+                  Próxima
+                </button>
+              </div>
+            )}
+          </>
         )}
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 sm:gap-6 mt-12">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors shadow-sm"
-            >
-              Anterior
-            </button>
-            <span className="text-slate-400 text-sm font-bold min-w-[120px] text-center bg-slate-900/50 py-2 rounded-lg border border-white/5">
-              Página {currentPage} de {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors shadow-sm"
-            >
-              Próxima
-            </button>
+        {activeTab === "bonus" && (
+          <div className="w-full">
+            <h3 className="text-xl font-black text-white uppercase tracking-wider mb-6">Suas Respostas Bônus</h3>
+            {palpitesExtras.length === 0 ? (
+              <div className="w-full flex flex-col items-center justify-center text-center py-16 px-4 bg-white/[0.02] rounded-3xl border border-white/5">
+                <Trophy className="w-12 h-12 text-yellow-500/50 mb-4" />
+                <h4 className="text-lg font-bold text-slate-300 mb-2">Nenhuma resposta bônus</h4>
+                <p className="text-slate-500 max-w-md">
+                  Este usuário ainda não respondeu nenhuma pergunta extra do bolão.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {palpitesExtras.map((extra) => (
+                  <div key={extra.id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-[50px] pointer-events-none"></div>
+                    
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="text-xs font-bold uppercase tracking-wider text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/20">
+                        Vale {extra.pontos_valendo} pontos
+                      </span>
+                      {extra.processada && (
+                        <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
+                          (extra.pontos_ganhos || 0) > 0 
+                            ? "bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20" 
+                            : "bg-red-500/10 text-red-400 border-red-500/20"
+                        }`}>
+                          {(extra.pontos_ganhos || 0) > 0 ? `+${extra.pontos_ganhos} Pontos` : "0 Pontos"}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <h4 className="text-lg md:text-xl font-bold text-white mb-6 leading-relaxed">
+                      {extra.descricao}
+                    </h4>
+                    
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-400">Resposta escolhida:</span>
+                        <span className="font-bold text-white px-3 py-1 bg-white/10 rounded-lg">{extra.resposta_escolhida}</span>
+                      </div>
+                      
+                      {extra.processada && extra.resposta_correta && (
+                        <div className="flex items-center justify-between text-sm mt-2 pt-3 border-t border-white/5">
+                          <span className="text-slate-400">Resposta Oficial:</span>
+                          <span className="font-bold text-yellow-400">{extra.resposta_correta}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
