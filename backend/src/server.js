@@ -334,6 +334,59 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
   }
 });
 
+// Endpoint para estatísticas de Perguntas Extras
+app.get('/api/stats/perguntas-extras', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        p.id,
+        p.descricao,
+        p.status,
+        p.resposta_correta,
+        p.opcoes,
+        r.resposta_escolhida,
+        COUNT(r.id)::int as total_votos
+      FROM perguntas_extras p
+      LEFT JOIN respostas_extras r ON p.id = r.pergunta_id
+      GROUP BY p.id, r.resposta_escolhida
+      ORDER BY p.id DESC;
+    `;
+    const { rows } = await pool.query(query);
+
+    // Grouping by question id
+    const questionsMap = {};
+    rows.forEach(row => {
+      if (!questionsMap[row.id]) {
+        questionsMap[row.id] = {
+          id: row.id,
+          descricao: row.descricao,
+          status: row.status,
+          resposta_correta: row.resposta_correta,
+          opcoes: row.opcoes,
+          total_respostas: 0,
+          distribuicao: {}
+        };
+        // Inicializa opções com 0
+        if (Array.isArray(row.opcoes)) {
+          row.opcoes.forEach(op => {
+            questionsMap[row.id].distribuicao[op] = 0;
+          });
+        }
+      }
+
+      if (row.resposta_escolhida) {
+        questionsMap[row.id].distribuicao[row.resposta_escolhida] = row.total_votos;
+        questionsMap[row.id].total_respostas += row.total_votos;
+      }
+    });
+
+    res.status(200).json({ perguntasExtrasStats: Object.values(questionsMap) });
+  } catch (error) {
+    console.error('Erro em stats/perguntas-extras:', error);
+    res.status(500).json({ error: 'Erro ao buscar estatísticas de perguntas extras.' });
+  }
+});
+
 // Endpoint de Ranking Completo
 app.get('/api/ranking', async (req, res) => {
   try {
