@@ -68,8 +68,14 @@ app.post('/api/palpites', async (req, res) => {
     const temPermissao = emailsPermitidos.includes(email.toLowerCase());
     const agora = new Date();
 
+    // Filtra palpites inválidos (vazios ou nulos)
+    const palpitesValidos = palpites.filter(p => 
+      p.palpiteA !== null && p.palpiteA !== undefined && p.palpiteA !== '' &&
+      p.palpiteB !== null && p.palpiteB !== undefined && p.palpiteB !== ''
+    );
+
     // 1. Busca todos os jogos enviados para validar o horário individualmente
-    const jogoIds = palpites.map(p => p.jogoId);
+    const jogoIds = palpitesValidos.map(p => p.jogoId);
 
     if (jogoIds.length > 0) {
       const { rows: jogosInfo } = await client.query('SELECT id, data_jogo FROM jogos WHERE id = ANY($1::int[])', [jogoIds]);
@@ -91,7 +97,7 @@ app.post('/api/palpites', async (req, res) => {
 
       let palpitesProcessados = 0;
 
-      for (const p of palpites) {
+      for (const p of palpitesValidos) {
         const dataDoJogo = mapDatas[p.jogoId];
 
         // Regra: Bloqueia se o jogo não existe, ou se já começou (e o usuário não é exceção)
@@ -107,7 +113,7 @@ app.post('/api/palpites', async (req, res) => {
       }
 
       // Se nenhum palpite pôde ser processado (todos atrasados) e o usuário mandou palpites
-      if (palpitesProcessados === 0 && palpites.length > 0) {
+      if (palpitesProcessados === 0 && palpitesValidos.length > 0) {
         await client.query('ROLLBACK');
         return res.status(403).json({ error: 'Todos os jogos enviados já começaram. Prazo encerrado para estes palpites.' });
       }
