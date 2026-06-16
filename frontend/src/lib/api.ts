@@ -60,6 +60,16 @@ export interface ContrarianBet {
 
 const baseURL = 'https://copadomundoad.onrender.com/api';
 
+export interface PerguntaExtraStats {
+  id: number;
+  descricao: string;
+  status: string;
+  resposta_correta: string | null;
+  opcoes: string[];
+  total_respostas: number;
+  distribuicao: Record<string, number>;
+}
+
 export async function fetchUserPalpites(username: string): Promise<ApiResponse> {
   const res = await fetch(`${baseURL}/palpites/${username}`);
 
@@ -98,6 +108,16 @@ export async function fetchRanking(): Promise<{ ranking: RankingItem[] }> {
 
   if (!res.ok) {
     throw new Error('Erro ao buscar ranking');
+  }
+
+  return res.json();
+}
+
+export async function fetchPerguntasExtrasStats(): Promise<{ perguntasExtrasStats: PerguntaExtraStats[] }> {
+  const res = await fetch(`${baseURL}/stats/perguntas-extras`);
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar estatísticas de perguntas extras');
   }
 
   return res.json();

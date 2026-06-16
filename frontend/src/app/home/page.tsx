@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Search, Loader2, AlertCircle, ArrowRight, Trophy } from "lucide-react";
-import { fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, TrendingGame, ContrarianBet } from "@/lib/api";
+import { fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, fetchPerguntasExtrasStats, TrendingGame, ContrarianBet, PerguntaExtraStats } from "@/lib/api";
 import { TrendingGames } from "@/components/TrendingGames";
 import { ContrarianBets } from "@/components/ContrarianBets";
+import { BonusQuestionsStats } from "@/components/BonusQuestionsStats";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 
@@ -31,6 +32,7 @@ export default function Home() {
 
   const [trendingGames, setTrendingGames] = useState<TrendingGame[]>([]);
   const [contrarianBets, setContrarianBets] = useState<ContrarianBet[]>([]);
+  const [bonusStats, setBonusStats] = useState<PerguntaExtraStats[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
 
@@ -49,12 +51,14 @@ export default function Home() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const [gamesRes, betsRes] = await Promise.all([
+        const [gamesRes, betsRes, bonusRes] = await Promise.all([
           fetchTrendingGames(),
-          fetchContrarianBets()
+          fetchContrarianBets(),
+          fetchPerguntasExtrasStats()
         ]);
         setTrendingGames(gamesRes.trendingGames);
         setContrarianBets(betsRes.contrarianBets);
+        setBonusStats(bonusRes.perguntasExtrasStats);
       } catch (err) {
         console.error("Erro ao carregar estatísticas:", err);
       } finally {
@@ -258,6 +262,7 @@ export default function Home() {
           className="w-full mt-16 space-y-12"
         >
           {trendingGames.length > 0 && <TrendingGames games={trendingGames} />}
+          {bonusStats.length > 0 && <BonusQuestionsStats stats={bonusStats} />}
           {contrarianBets.length > 0 && <ContrarianBets bets={contrarianBets} />}
         </motion.div>
 
