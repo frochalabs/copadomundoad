@@ -232,7 +232,7 @@ app.get('/api/stats/trending-games', async (req, res) => {
         COALESCE(SUM(CASE WHEN (p.palpite_a = p.palpite_b) THEN 1 ELSE 0 END), 0)::int as votos_empate
       FROM jogos j
       LEFT JOIN palpites p ON j.id = p.jogo_id
-      WHERE j.status = 'SCHEDULED'
+      WHERE j.status IN ('SCHEDULED', 'TIMED')
       GROUP BY j.id, j.time_a, j.time_b, j.data_jogo
       HAVING COUNT(p.id) > 0
       ORDER BY (ABS((COALESCE(SUM(CASE WHEN (p.palpite_a > p.palpite_b) THEN 1 ELSE 0 END), 0) - 
@@ -271,7 +271,7 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
           END as resultado_palpite
         FROM palpites p
         JOIN jogos j ON p.jogo_id = j.id
-        WHERE j.status = 'SCHEDULED'
+        WHERE j.status IN ('SCHEDULED', 'TIMED')
       ),
       result_votes AS (
         SELECT 
