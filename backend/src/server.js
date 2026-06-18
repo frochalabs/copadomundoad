@@ -68,8 +68,14 @@ app.post('/api/palpites', async (req, res) => {
     const temPermissao = emailsPermitidos.includes(email.toLowerCase());
     const agora = new Date();
 
+    // Filtra palpites inválidos (vazios ou nulos)
+    const palpitesValidos = palpites.filter(p => 
+      p.palpiteA !== null && p.palpiteA !== undefined && p.palpiteA !== '' &&
+      p.palpiteB !== null && p.palpiteB !== undefined && p.palpiteB !== ''
+    );
+
     // 1. Busca todos os jogos enviados para validar o horário individualmente
-    const jogoIds = palpites.map(p => p.jogoId);
+    const jogoIds = palpitesValidos.map(p => p.jogoId);
 
     if (jogoIds.length > 0) {
       const { rows: jogosInfo } = await client.query('SELECT id, data_jogo FROM jogos WHERE id = ANY($1::int[])', [jogoIds]);
@@ -91,9 +97,8 @@ app.post('/api/palpites', async (req, res) => {
 
       let palpitesProcessados = 0;
 
-      for (const p of palpites) {
-        const jogoId = p.jogoId !== undefined ? p.jogoId : p.jogo_id;
-        const dataDoJogo = mapDatas[jogoId];
+      for (const p of palpitesValidos) {
+        const dataDoJogo = mapDatas[p.jogoId];
 
         // Regra: Bloqueia se o jogo não existe, ou se já começou (e o usuário não é exceção)
         if (!dataDoJogo) continue;
@@ -103,23 +108,12 @@ app.post('/api/palpites', async (req, res) => {
           continue;
         }
 
-        // Suporte tanto para palpiteA/B quanto para palpite_a/b
-        const palpiteA = p.palpiteA !== undefined ? p.palpiteA : p.palpite_a;
-        const palpiteB = p.palpiteB !== undefined ? p.palpiteB : p.palpite_b;
-
-        // Previne inserção de palpites vazios ou nulos que causariam erro no banco de dados
-        if (palpiteA === null || palpiteA === undefined || palpiteA === "" ||
-          palpiteB === null || palpiteB === undefined || palpiteB === "") {
-          console.warn(`Palpite inválido ou incompleto ignorado para o usuário ${username} no jogo ${jogoId}:`, p);
-          continue;
-        }
-
-        await client.query(upsertQuery, [email, username, jogoId, palpiteA, palpiteB]);
+        await client.query(upsertQuery, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
         palpitesProcessados++;
       }
 
       // Se nenhum palpite pôde ser processado (todos atrasados) e o usuário mandou palpites
-      if (palpitesProcessados === 0 && palpites.length > 0) {
+      if (palpitesProcessados === 0 && palpitesValidos.length > 0) {
         await client.query('ROLLBACK');
         return res.status(403).json({ error: 'Todos os jogos enviados já começaram. Prazo encerrado para estes palpites.' });
       }
