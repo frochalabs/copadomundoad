@@ -64,7 +64,7 @@ app.post('/api/palpites', async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    const emailsPermitidos = [];
+    const emailsPermitidos = ["munnik.lessa@adpromotora.com.br"];
     const temPermissao = emailsPermitidos.includes(email.toLowerCase());
     const agora = new Date();
 
@@ -92,7 +92,8 @@ app.post('/api/palpites', async (req, res) => {
       let palpitesProcessados = 0;
 
       for (const p of palpites) {
-        const dataDoJogo = mapDatas[p.jogoId];
+        const jogoId = p.jogoId !== undefined ? p.jogoId : p.jogo_id;
+        const dataDoJogo = mapDatas[jogoId];
 
         // Regra: Bloqueia se o jogo não existe, ou se já começou (e o usuário não é exceção)
         if (!dataDoJogo) continue;
@@ -102,7 +103,18 @@ app.post('/api/palpites', async (req, res) => {
           continue;
         }
 
-        await client.query(upsertQuery, [email, username, p.jogoId, p.palpiteA, p.palpiteB]);
+        // Suporte tanto para palpiteA/B quanto para palpite_a/b
+        const palpiteA = p.palpiteA !== undefined ? p.palpiteA : p.palpite_a;
+        const palpiteB = p.palpiteB !== undefined ? p.palpiteB : p.palpite_b;
+
+        // Previne inserção de palpites vazios ou nulos que causariam erro no banco de dados
+        if (palpiteA === null || palpiteA === undefined || palpiteA === "" ||
+          palpiteB === null || palpiteB === undefined || palpiteB === "") {
+          console.warn(`Palpite inválido ou incompleto ignorado para o usuário ${username} no jogo ${jogoId}:`, p);
+          continue;
+        }
+
+        await client.query(upsertQuery, [email, username, jogoId, palpiteA, palpiteB]);
         palpitesProcessados++;
       }
 
@@ -147,7 +159,10 @@ app.get('/api/palpites/:username', async (req, res) => {
         p.palpite_a,
         p.palpite_b,
         p.pontos_ganhos,
-        j.data_jogo
+        j.data_jogo,
+        j.gols_a,
+        j.gols_b,
+        j.status
       FROM palpites p
       JOIN jogos j ON p.jogo_id = j.id
       WHERE p.username = $1
@@ -587,7 +602,7 @@ app.post('/api/palpites-extras', async (req, res) => {
       DO UPDATE SET resposta_escolhida = EXCLUDED.resposta_escolhida
     `;
     await pool.query(query, [pergunta_id, username, resposta]);
-    
+
     res.status(200).json({ message: 'Resposta salva com sucesso!' });
   } catch (error) {
     console.error('Erro ao salvar palpite extra:', error);
@@ -610,9 +625,9 @@ app.post('/api/admin/criar-pergunta', async (req, res) => {
       RETURNING *;
     `;
     const { rows } = await pool.query(query, [
-      descricao, 
-      JSON.stringify(opcoes), 
-      pontos_valendo || 2, 
+      descricao,
+      JSON.stringify(opcoes),
+      pontos_valendo || 2,
       jogo_id || null
     ]);
 
@@ -632,7 +647,7 @@ app.post('/api/admin/resolver-pergunta', async (req, res) => {
   }
 
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
 
@@ -669,8 +684,8 @@ app.post('/api/admin/resolver-pergunta', async (req, res) => {
     const { rowCount: erros } = await client.query(queryErros, [pergunta_id, resposta_correta]);
 
     await client.query('COMMIT');
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       message: 'Pergunta resolvida com sucesso!',
       estatisticas: {
         acertos: acertos,
