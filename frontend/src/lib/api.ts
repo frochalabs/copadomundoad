@@ -6,6 +6,9 @@ export interface Palpite {
   palpite_b: number;
   pontos_ganhos: number | null;
   data_jogo: string;
+  gols_a?: number | null;
+  gols_b?: number | null;
+  status?: string;
 }
 
 export interface PalpiteExtra {

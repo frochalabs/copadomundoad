@@ -82,7 +82,7 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
       </div>
       
       {/* Footer Info / Previsão */}
-      {palpite.pontos_ganhos === null && (
+      {palpite.pontos_ganhos === null && palpite.status !== 'FINISHED' && (
         <div className="mt-6 w-full flex flex-col gap-2">
           <div className="w-full flex items-center justify-between text-[11px] sm:text-xs font-semibold px-3 py-2 bg-[#10B981]/10 text-[#10B981] rounded border border-[#10B981]/20">
             <span className="flex items-center gap-1.5">🟢 5 pts</span>
@@ -91,6 +91,18 @@ export function MatchCard({ palpite, index }: MatchCardProps) {
           <div className="w-full flex items-center justify-between text-[11px] sm:text-xs font-semibold px-3 py-2 bg-blue-500/10 text-blue-400 rounded border border-blue-500/20">
             <span className="flex items-center gap-1.5">🔵 3 pts</span>
             <span className="text-blue-400/70 font-medium">se acertar vencedor</span>
+          </div>
+        </div>
+      )}
+
+      {/* Placar Final */}
+      {palpite.status === 'FINISHED' && palpite.gols_a !== null && palpite.gols_b !== null && palpite.gols_a !== undefined && palpite.gols_b !== undefined && (
+        <div className="mt-5 w-full flex flex-col items-center justify-center">
+          <span className="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-1.5">Resultado</span>
+          <div className="flex items-center gap-3 px-5 py-1.5 bg-black/30 rounded-full border border-white/[0.08] backdrop-blur-sm shadow-inner">
+            <span className="font-black text-sm sm:text-base text-white">{palpite.gols_a}</span>
+            <span className="text-[10px] text-slate-500 font-medium">X</span>
+            <span className="font-black text-sm sm:text-base text-white">{palpite.gols_b}</span>
           </div>
         </div>
       )}
