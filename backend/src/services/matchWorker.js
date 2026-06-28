@@ -57,8 +57,15 @@ const iniciarWorker = () => {
         }
 
         if (apiData && apiData.status === 'FINISHED') {
-          const golsA = apiData.score?.fullTime?.home;
-          const golsB = apiData.score?.fullTime?.away;
+          // Regra do Bolão: Apenas os 90 minutos + acréscimos!
+          // A API manda o placar dos 90 min em "regularTime". Se não existir, usamos o "fullTime" (padrão da fase de grupos).
+          const golsA = apiData.score?.regularTime?.home !== undefined && apiData.score?.regularTime?.home !== null 
+                        ? apiData.score.regularTime.home 
+                        : apiData.score?.fullTime?.home;
+                        
+          const golsB = apiData.score?.regularTime?.away !== undefined && apiData.score?.regularTime?.away !== null 
+                        ? apiData.score.regularTime.away 
+                        : apiData.score?.fullTime?.away;
 
           // Apenas processa se a API já tiver preenchido os gols.
           // Às vezes o status muda para FINISHED antes do placar ser inserido.

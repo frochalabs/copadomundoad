@@ -44,10 +44,11 @@ async function syncJogos() {
       }
 
       // Procura no seu banco um jogo com esses dois times para salvar o api_id e a data_jogo nele
+      // Usamos OR para garantir que mesmo se os times estiverem invertidos (comum no mata-mata) ele ache o jogo
       const query = `
         UPDATE jogos 
         SET api_id = $1, data_jogo = $4
-        WHERE time_a = $2 AND time_b = $3 
+        WHERE (time_a = $2 AND time_b = $3) OR (time_a = $3 AND time_b = $2)
         RETURNING id;
       `;
       
