@@ -79,32 +79,35 @@ export default function Home() {
   // Efeito de Confete ao carregar os vencedores
   useEffect(() => {
     if (!statsLoading && topUsers.length > 0) {
-      const duration = 2000;
-      const end = Date.now() + duration;
+      // Usar setTimeout para fazer disparos pontuais (explosões) em vez de frame-a-frame (trava no mobile)
+      setTimeout(() => {
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 30 : 60; // Reduz a quantidade no celular para fluidez
+        
+        const fireConfetti = () => {
+          confetti({
+            particleCount,
+            angle: 60,
+            spread: 70,
+            origin: { x: -0.1, y: 0.8 },
+            colors: ['#FBBF24', '#10B981', '#FFFFFF'],
+            zIndex: 100
+          });
+          confetti({
+            particleCount,
+            angle: 120,
+            spread: 70,
+            origin: { x: 1.1, y: 0.8 },
+            colors: ['#FBBF24', '#10B981', '#FFFFFF'],
+            zIndex: 100
+          });
+        };
 
-      const frame = () => {
-        confetti({
-          particleCount: 4,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0, y: 0.8 },
-          colors: ['#FBBF24', '#10B981', '#FFFFFF']
-        });
-        confetti({
-          particleCount: 4,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1, y: 0.8 },
-          colors: ['#FBBF24', '#10B981', '#FFFFFF']
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
-      };
-      
-      // Delay it slightly for the animation of the page to settle
-      setTimeout(() => requestAnimationFrame(frame), 500);
+        // Dispara 3 vezes seguidas, simulando uma festa sem sobrecarregar a CPU
+        fireConfetti();
+        setTimeout(fireConfetti, 350);
+        setTimeout(fireConfetti, 700);
+      }, 500);
     }
   }, [statsLoading, topUsers.length]);
 
