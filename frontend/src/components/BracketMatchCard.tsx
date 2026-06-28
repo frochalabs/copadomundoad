@@ -71,7 +71,7 @@ export function BracketMatchCard({ palpite, index }: BracketMatchCardProps) {
       className={`relative rounded-xl border ${cardBorder} bg-[#0B1320] flex flex-col overflow-hidden w-full transition-all`}
     >
       {isFinished && isCravada && (
-        <div className="absolute top-0 right-1/2 translate-x-1/2 bg-yellow-500/20 p-1.5 rounded-b-xl border border-t-0 border-yellow-500/50 z-10 shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+        <div className="absolute top-0 right-0 bg-yellow-500/20 p-1.5 rounded-bl-xl border-b border-l border-yellow-500/50 z-10 shadow-[-2px_2px_10px_rgba(234,179,8,0.3)]">
           <Target className="w-4 h-4 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
         </div>
       )}

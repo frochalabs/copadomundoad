@@ -10,8 +10,6 @@ import { BonusQuestionsStats } from "@/components/BonusQuestionsStats";
 import { UserAvatar } from "@/components/UserAvatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import confetti from "canvas-confetti";
-
 const LOADING_PHRASES = [
   "Aquecendo os jogadores...",
   "Calculando a probabilidade de zebras...",
@@ -76,40 +74,6 @@ export default function Home() {
     loadStats();
   }, []);
 
-  // Efeito de Confete ao carregar os vencedores
-  useEffect(() => {
-    if (!statsLoading && topUsers.length > 0) {
-      // Usar setTimeout para fazer disparos pontuais (explosões) em vez de frame-a-frame (trava no mobile)
-      setTimeout(() => {
-        const isMobile = window.innerWidth < 768;
-        const particleCount = isMobile ? 30 : 60; // Reduz a quantidade no celular para fluidez
-        
-        const fireConfetti = () => {
-          confetti({
-            particleCount,
-            angle: 60,
-            spread: 70,
-            origin: { x: -0.1, y: 0.8 },
-            colors: ['#FBBF24', '#10B981', '#FFFFFF'],
-            zIndex: 100
-          });
-          confetti({
-            particleCount,
-            angle: 120,
-            spread: 70,
-            origin: { x: 1.1, y: 0.8 },
-            colors: ['#FBBF24', '#10B981', '#FFFFFF'],
-            zIndex: 100
-          });
-        };
-
-        // Dispara 3 vezes seguidas, simulando uma festa sem sobrecarregar a CPU
-        fireConfetti();
-        setTimeout(fireConfetti, 350);
-        setTimeout(fireConfetti, 700);
-      }, 500);
-    }
-  }, [statsLoading, topUsers.length]);
 
   const executeSearch = async (targetUser: string) => {
     if (!targetUser.trim()) return;
