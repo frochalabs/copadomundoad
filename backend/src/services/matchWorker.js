@@ -16,12 +16,13 @@ const iniciarWorker = () => {
     const client = await pool.connect();
 
     try {
-      // Se estivermos simulando, ignora as regras de data
+      // Removemos o limite de "5 hours" porque servidores gratuitos (Render) dormem.
+      // Agora ele busca TODOS os jogos do passado que ainda não foram marcados como FINISHED.
       const queryJogos = `
         SELECT id, api_id, time_a, time_b 
         FROM jogos 
         WHERE status != 'FINISHED' AND api_id IS NOT NULL
-        ${SIMULAR_JOGO_ID ? '' : "AND data_jogo <= NOW() - INTERVAL '110 minutes' AND data_jogo >= NOW() - INTERVAL '5 hours'"}
+        ${SIMULAR_JOGO_ID ? '' : "AND data_jogo <= NOW() - INTERVAL '110 minutes'"}
       `;
 
       const { rows: jogosPendentes } = await client.query(queryJogos);
