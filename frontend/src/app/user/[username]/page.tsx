@@ -20,6 +20,7 @@ export default function UserPage() {
   const [posicao, setPosicao] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showRules, setShowRules] = useState(false);
 
   const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
 
@@ -416,24 +417,32 @@ export default function UserPage() {
       </div>
 
       {/* Floating Info FAB */}
-      <div className="fixed bottom-6 right-6 z-50 group">
-        <div className="bg-[#10B981] text-black p-3.5 rounded-full shadow-lg cursor-help shadow-[#10B981]/20 hover:scale-110 transition-transform flex items-center justify-center border border-[#10B981]/50 relative">
-          <Info className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-          </span>
-        </div>
-        <div className="absolute bottom-full right-0 mb-4 w-72 bg-[#051020] border border-[#10B981]/30 rounded-2xl p-5 shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none scale-95 group-hover:scale-100 origin-bottom-right backdrop-blur-xl">
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div 
+          className={`absolute bottom-full right-0 mb-4 w-72 sm:w-80 bg-[#0B1320] border border-white/10 rounded-2xl p-5 shadow-2xl transition-all origin-bottom-right backdrop-blur-xl ${
+            showRules ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+          }`}
+        >
           <h4 className="text-white font-black mb-2 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-yellow-400" />
-            Atenção às Regras
+            <AlertCircle className="w-5 h-5 text-slate-400" />
+            Regra do Tempo Regular
           </h4>
-          <p className="text-sm text-slate-300 font-medium leading-relaxed">
-            Todos os palpites consideram apenas o resultado do <strong>tempo regulamentar (90 min + acréscimos)</strong>.
-            Gols na prorrogação e decisões por pênaltis <span className="text-red-400 font-bold">não contam</span> para o placar final do bolão!
+          <p className="text-sm text-slate-400 font-medium leading-relaxed">
+            Todos os palpites consideram apenas o resultado dos <strong>90 minutos + acréscimos</strong>.
+            Gols na prorrogação e decisões por pênaltis <span className="text-slate-300 font-bold">não contam</span> para o placar do bolão.
           </p>
         </div>
+
+        <button 
+          onClick={() => setShowRules(!showRules)}
+          className={`p-3.5 rounded-full shadow-lg transition-transform flex items-center justify-center border backdrop-blur-md outline-none ${
+            showRules 
+              ? "bg-[#10B981] text-black border-[#10B981] shadow-[#10B981]/20 scale-110" 
+              : "bg-slate-800/80 text-slate-400 border-white/10 hover:bg-slate-700 hover:text-white"
+          }`}
+        >
+          <Info className="w-6 h-6" />
+        </button>
       </div>
     </main>
   );
