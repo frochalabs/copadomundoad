@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Target } from "lucide-react";
 import { Palpite } from "@/lib/api";
 
 interface BracketMatchCardProps {
@@ -70,8 +71,8 @@ export function BracketMatchCard({ palpite, index }: BracketMatchCardProps) {
       className={`relative rounded-xl border ${cardBorder} bg-[#0B1320] flex flex-col overflow-hidden w-full transition-all`}
     >
       {isFinished && isCravada && (
-        <div className="absolute top-0 right-1/2 translate-x-1/2 bg-yellow-500 text-black text-[9px] font-black uppercase px-3 py-0.5 rounded-b-md z-10 shadow-[0_0_10px_rgba(234,179,8,0.5)]">
-          Na mosca
+        <div className="absolute top-0 right-1/2 translate-x-1/2 bg-yellow-500/20 p-1.5 rounded-b-xl border border-t-0 border-yellow-500/50 z-10 shadow-[0_0_15px_rgba(234,179,8,0.3)]">
+          <Target className="w-4 h-4 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
         </div>
       )}
 
