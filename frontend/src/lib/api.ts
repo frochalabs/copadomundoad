@@ -9,6 +9,9 @@ export interface Palpite {
   gols_a?: number | null;
   gols_b?: number | null;
   status?: string;
+  fase?: string;
+  bandeira_a?: string;
+  bandeira_b?: string;
 }
 
 export interface PalpiteExtra {
@@ -61,7 +64,7 @@ export interface ContrarianBet {
   placar_votos: number;
 }
 
-const baseURL = 'https://copadomundoad.onrender.com/api';
+const baseURL = 'http://localhost:3000/api';
 
 export interface PerguntaExtraStats {
   id: number;
@@ -81,6 +84,19 @@ export async function fetchUserPalpites(username: string): Promise<ApiResponse> 
       throw new Error('Usuário não encontrado');
     }
     throw new Error('Erro ao buscar palpites');
+  }
+
+  return res.json();
+}
+
+export async function fetchUserPalpitesGrupos(username: string): Promise<ApiResponse> {
+  const res = await fetch(`${baseURL}/palpites/${username}/grupos`);
+
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error('Nenhum palpite na fase de grupos para este usuário');
+    }
+    throw new Error('Erro ao buscar palpites da fase de grupos');
   }
 
   return res.json();
@@ -111,6 +127,16 @@ export async function fetchRanking(): Promise<{ ranking: RankingItem[] }> {
 
   if (!res.ok) {
     throw new Error('Erro ao buscar ranking');
+  }
+
+  return res.json();
+}
+
+export async function fetchRankingGrupos(): Promise<{ ranking: RankingItem[] }> {
+  const res = await fetch(`${baseURL}/ranking/grupos`);
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar ranking da fase de grupos');
   }
 
   return res.json();

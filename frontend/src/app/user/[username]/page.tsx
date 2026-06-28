@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, AlertCircle, ArrowLeft, Trophy, CheckCircle2, ChevronDown, CalendarDays, ArrowDown } from "lucide-react";
-import { Palpite, PalpiteExtra, fetchUserPalpites } from "@/lib/api";
+import { Search, Loader2, AlertCircle, ArrowLeft, Trophy, CheckCircle2, ChevronDown, CalendarDays, ArrowDown, Info } from "lucide-react";
+import { Palpite, PalpiteExtra, fetchUserPalpites, fetchUserPalpitesGrupos } from "@/lib/api";
 import { MatchCard } from "@/components/MatchCard";
+import { BracketMatchCard } from "@/components/BracketMatchCard";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -20,27 +21,43 @@ export default function UserPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
+
+  const MATA_MATA_PHASES = [
+    { id: 'LAST_32', label: '16-Avos de Final', count: 16 },
+    { id: 'LAST_16', label: 'Oitavas de Final', count: 8 },
+    { id: 'QUARTER_FINALS', label: 'Quartas de Final', count: 4 },
+    { id: 'SEMI_FINALS', label: 'Semifinais', count: 2 },
+    { id: 'FINAL', label: 'Final', count: 1 }
+  ];
   const [currentPage, setCurrentPage] = useState(1);
   const [teamSearch, setTeamSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [selectedRound, setSelectedRound] = useState<number | "all">("all");
+  const [selectedFase, setSelectedFase] = useState<"mata-mata" | "grupos">("mata-mata");
   const itemsPerPage = 24;
 
   useEffect(() => {
     const loadPalpites = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
-        const data = await fetchUserPalpites(username);
+        const data = selectedFase === "mata-mata" 
+          ? await fetchUserPalpites(username) 
+          : await fetchUserPalpitesGrupos(username);
         setPalpites(data.palpites);
         setPalpitesExtras(data.palpitesExtras || []);
         setPosicao(data.posicao ?? null);
       } catch (err: any) {
         setError(err.message || "Erro ao carregar palpites.");
+        setPalpites([]);
+        setPalpitesExtras([]);
+        setPosicao(null);
       } finally {
         setIsLoading(false);
       }
     };
     loadPalpites();
-  }, [username]);
+  }, [username, selectedFase]);
 
   if (isLoading) {
     return (
@@ -72,11 +89,7 @@ export default function UserPage() {
   // Lógica de Filtro e Paginação
   let basePalpites = palpites;
 
-  // Filtrar por rodada (index original)
-  if (selectedRound !== "all") {
-    const roundStartIndex = (selectedRound - 1) * 24;
-    basePalpites = palpites.slice(roundStartIndex, roundStartIndex + 24);
-  }
+  // No round filtering needed for Mata-Mata
 
   // Filtrar por busca
   let filteredPalpites = basePalpites.filter(p => {
@@ -162,62 +175,69 @@ export default function UserPage() {
         </motion.div>
 
 
-        {/* Tabs de Navegação */}
-        <div className="flex items-center gap-4 mt-12 mb-8 border-b border-white/10 pb-4">
-          <button
-            onClick={() => setActiveTab("jogos")}
-            className={`text-lg font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-xl cursor-pointer select-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
-              activeTab === "jogos"
-                ? "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20"
-                : "border border-transparent text-slate-400 hover:text-white"
-            }`}
-          >
-            Jogos
-          </button>
-          <button
-            onClick={() => setActiveTab("bonus")}
-            className={`text-lg font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-xl flex items-center gap-2 cursor-pointer select-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
-              activeTab === "bonus"
-                ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                : "border border-transparent text-slate-400 hover:text-white"
-            }`}
-          >
-            Perguntas Bônus
-            {palpitesExtras.length > 0 && (
-              <span className="bg-white/10 text-xs px-2 py-1 rounded-full">{palpitesExtras.length}</span>
-            )}
-          </button>
+        <div className="flex flex-col sm:flex-row gap-4 mt-12 mb-8 border-b border-white/10 pb-4">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab("jogos")}
+              className={`text-lg font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-xl cursor-pointer select-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                activeTab === "jogos"
+                  ? "bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/20"
+                  : "border border-transparent text-slate-400 hover:text-white"
+              }`}
+            >
+              Jogos
+            </button>
+            {/* 
+            <button
+              onClick={() => setActiveTab("bonus")}
+              className={`text-lg font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-xl flex items-center gap-2 cursor-pointer select-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                activeTab === "bonus"
+                  ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                  : "border border-transparent text-slate-400 hover:text-white"
+              }`}
+            >
+              Perguntas Bônus
+              {palpitesExtras.length > 0 && (
+                <span className="bg-white/10 text-xs px-2 py-1 rounded-full">{palpitesExtras.length}</span>
+              )}
+            </button>
+            */}
+          </div>
+          
+          <div className="flex gap-2 sm:ml-auto">
+            <button
+              onClick={() => setSelectedFase("mata-mata")}
+              className={`text-sm font-bold uppercase tracking-wider transition-all px-3 py-1.5 rounded-lg border ${
+                selectedFase === "mata-mata"
+                  ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                  : "bg-transparent border-slate-700/50 text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              Mata-Mata
+            </button>
+            <button
+              onClick={() => setSelectedFase("grupos")}
+              className={`text-sm font-bold uppercase tracking-wider transition-all px-3 py-1.5 rounded-lg border ${
+                selectedFase === "grupos"
+                  ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                  : "bg-transparent border-slate-700/50 text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              Fase de Grupos
+            </button>
+          </div>
         </div>
 
         {activeTab === "jogos" && (
           <>
             {/* Busca e Lista */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full mb-8 gap-4">
-              <h3 className="text-xl font-black text-white uppercase tracking-wider">Palpites da Fase de Grupos</h3>
+              <h3 className="text-xl font-black text-white uppercase tracking-wider">
+                Palpites {selectedFase === 'mata-mata' ? 'do Mata-Mata' : 'da Fase de Grupos'}
+              </h3>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-                {/* Filtro de Rodada */}
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-focus-within:text-[#10B981] transition-colors">
-                    <CalendarDays className="w-5 h-5" />
-                  </div>
-                  <select
-                    value={selectedRound}
-                    onChange={(e) => {
-                      setSelectedRound(e.target.value === "all" ? "all" : Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    className="bg-[#0f172a] hover:bg-[#1e293b] border border-slate-700/50 hover:border-slate-600 focus:border-[#10B981] text-white text-sm rounded-xl pl-12 pr-10 py-3 outline-none transition-all cursor-pointer appearance-none min-w-[170px] shadow-sm font-medium w-full"
-                  >
-                    <option value="all" className="bg-slate-900">Todas as Rodadas</option>
-                    <option value="1" className="bg-slate-900">Rodada 1 (1 a 24)</option>
-                    <option value="2" className="bg-slate-900">Rodada 2 (25 a 48)</option>
-                    <option value="3" className="bg-slate-900">Rodada 3 (49 a 72)</option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                </div>
+
 
                 {/* Ordenação */}
                 <button
@@ -255,8 +275,56 @@ export default function UserPage() {
                 <p className="text-slate-500 max-w-md">
                   {teamSearch.trim() 
                     ? `Não encontramos nenhum jogo para a seleção "${teamSearch}". Verifique se o nome está correto.`
-                    : "Ainda não existem palpites registrados para esta rodada específica."}
+                    : selectedFase === 'mata-mata' 
+                      ? "Ainda não existem palpites registrados para o mata-mata."
+                      : "Ainda não existem palpites registrados para esta rodada específica."}
                 </p>
+              </div>
+            ) : selectedFase === 'mata-mata' ? (
+              <div className="flex flex-col gap-16 w-full mt-4">
+                {MATA_MATA_PHASES.map((phase) => {
+                  // Pega todos os palpites daquela fase ignorando paginação
+                  const phasePalpites = filteredPalpites.filter(p => p.fase === phase.id);
+                  
+                  // Se não houver nenhum jogo programado e nem palpites, e for a primeira renderização
+                  // podemos preencher com slots vazios para simular as brackets
+                  const slots = Array.from({ length: phase.count }).map((_, i) => {
+                    return phasePalpites[i] || {
+                      jogo_id: -10000 - (phase.count * 100) - i, // fake unique id
+                      time_a: 'A Definir',
+                      time_b: 'A Definir',
+                      palpite_a: null,
+                      palpite_b: null,
+                      pontos_ganhos: null,
+                      data_jogo: 'Em breve',
+                      status: 'SCHEDULED',
+                      fase: phase.id,
+                      bandeira_a: '',
+                      bandeira_b: ''
+                    };
+                  });
+
+                  return (
+                    <div key={phase.id} className="flex flex-col gap-6">
+                      {/* Título da fase */}
+                      <div className="flex items-center gap-4 px-2">
+                        <h4 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] to-[#FBBF24] uppercase tracking-widest drop-shadow-md">
+                          {phase.label}
+                        </h4>
+                        <div className="flex-1 h-[1px] bg-gradient-to-r from-[#10B981]/50 to-transparent"></div>
+                      </div>
+
+                      {/* Grade de Jogos */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6 relative">
+                        {slots.map((palpite, idx) => (
+                          <div key={palpite.jogo_id} className="relative">
+                            <BracketMatchCard palpite={palpite as any} index={idx} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -266,7 +334,7 @@ export default function UserPage() {
               </div>
             )}
 
-            {totalPages > 1 && (
+            {selectedFase !== 'mata-mata' && totalPages > 1 && (
               <div className="flex items-center justify-center gap-3 sm:gap-6 mt-12">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -345,7 +413,27 @@ export default function UserPage() {
             )}
           </div>
         )}
+      </div>
 
+      {/* Floating Info FAB */}
+      <div className="fixed bottom-6 right-6 z-50 group">
+        <div className="bg-[#10B981] text-black p-3.5 rounded-full shadow-lg cursor-help shadow-[#10B981]/20 hover:scale-110 transition-transform flex items-center justify-center border border-[#10B981]/50 relative">
+          <Info className="w-6 h-6" />
+          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+          </span>
+        </div>
+        <div className="absolute bottom-full right-0 mb-4 w-72 bg-[#051020] border border-[#10B981]/30 rounded-2xl p-5 shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none scale-95 group-hover:scale-100 origin-bottom-right backdrop-blur-xl">
+          <h4 className="text-white font-black mb-2 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-yellow-400" />
+            Atenção às Regras
+          </h4>
+          <p className="text-sm text-slate-300 font-medium leading-relaxed">
+            Todos os palpites consideram apenas o resultado do <strong>tempo regulamentar (90 min + acréscimos)</strong>.
+            Gols na prorrogação e decisões por pênaltis <span className="text-red-400 font-bold">não contam</span> para o placar final do bolão!
+          </p>
+        </div>
       </div>
     </main>
   );

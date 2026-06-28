@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, AlertCircle, ArrowRight, Trophy } from "lucide-react";
-import { fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, fetchPerguntasExtrasStats, TrendingGame, ContrarianBet, PerguntaExtraStats } from "@/lib/api";
+import { Search, Loader2, AlertCircle, ArrowRight, Trophy, Crown } from "lucide-react";
+import { fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, fetchPerguntasExtrasStats, fetchRankingGrupos, TrendingGame, ContrarianBet, PerguntaExtraStats, RankingItem } from "@/lib/api";
 import { TrendingGames } from "@/components/TrendingGames";
+import { WinnersDashboard } from "@/components/WinnersDashboard";
 import { ContrarianBets } from "@/components/ContrarianBets";
 import { BonusQuestionsStats } from "@/components/BonusQuestionsStats";
+import { UserAvatar } from "@/components/UserAvatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti";
 
 const LOADING_PHRASES = [
   "Aquecendo os jogadores...",
@@ -33,6 +36,7 @@ export default function Home() {
   const [trendingGames, setTrendingGames] = useState<TrendingGame[]>([]);
   const [contrarianBets, setContrarianBets] = useState<ContrarianBet[]>([]);
   const [bonusStats, setBonusStats] = useState<PerguntaExtraStats[]>([]);
+  const [topUsers, setTopUsers] = useState<RankingItem[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
 
@@ -51,14 +55,17 @@ export default function Home() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const [gamesRes, betsRes, bonusRes] = await Promise.all([
+        const [gamesRes, betsRes, bonusRes, rankingRes] = await Promise.all([
           fetchTrendingGames(),
           fetchContrarianBets(),
-          fetchPerguntasExtrasStats()
+          fetchPerguntasExtrasStats(),
+          fetchRankingGrupos(),
+          new Promise(r => setTimeout(r, 1500)) // Garante pelo menos 1.5s de tela de loading
         ]);
         setTrendingGames(gamesRes.trendingGames);
         setContrarianBets(betsRes.contrarianBets);
         setBonusStats(bonusRes.perguntasExtrasStats);
+        setTopUsers(rankingRes.ranking.slice(0, 5));
       } catch (err) {
         console.error("Erro ao carregar estatísticas:", err);
       } finally {
@@ -68,6 +75,38 @@ export default function Home() {
 
     loadStats();
   }, []);
+
+  // Efeito de Confete ao carregar os vencedores
+  useEffect(() => {
+    if (!statsLoading && topUsers.length > 0) {
+      const duration = 2000;
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 4,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.8 },
+          colors: ['#FBBF24', '#10B981', '#FFFFFF']
+        });
+        confetti({
+          particleCount: 4,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.8 },
+          colors: ['#FBBF24', '#10B981', '#FFFFFF']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      
+      // Delay it slightly for the animation of the page to settle
+      setTimeout(() => requestAnimationFrame(frame), 500);
+    }
+  }, [statsLoading, topUsers.length]);
 
   const executeSearch = async (targetUser: string) => {
     if (!targetUser.trim()) return;
@@ -231,15 +270,15 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-left"
+              className="mt-3 bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-left"
             >
-              <div className="bg-blue-500/20 p-2 rounded-full shrink-0">
-                <AlertCircle className="h-5 w-5 text-blue-400" />
+              <div className="bg-purple-500/20 p-2 rounded-full shrink-0">
+                <Trophy className="h-5 w-5 text-purple-400" />
               </div>
               <div className="flex flex-col">
-                <span className="font-medium text-blue-200 mb-1">Ainda não enviou seus palpites?</span>
-                <p className="text-blue-300/80 mb-2">
-                  Eles só aparecerão aqui após você preencher o formulário oficial.
+                <span className="font-medium text-purple-200 mb-1">O MATA-MATA COMEÇOU!</span>
+                <p className="text-purple-300/80 mb-2">
+                  A fase de grupos acabou, mas a emoção continua. Preencha seus palpites para a próxima fase!
                 </p>
                 <a
                   href="https://forms.gle/ekP3j6fEA1aWSTzq5"
@@ -247,12 +286,15 @@ export default function Home() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[#10B981] hover:text-[#34d399] font-semibold transition-colors w-fit"
                 >
-                  Acessar Formulário <ArrowRight className="h-4 w-4" />
+                  Fazer Palpites do Mata-mata <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
             </motion.div>
           </div>
         </motion.div>
+
+        {/* Section: Vencedores da Fase de Grupos */}
+        <WinnersDashboard topUsers={topUsers} />
 
         {/* Stats Section - Visible always */}
         <motion.div
@@ -262,7 +304,7 @@ export default function Home() {
           className="w-full mt-16 space-y-12"
         >
           {trendingGames.length > 0 && <TrendingGames games={trendingGames} />}
-          {bonusStats.length > 0 && <BonusQuestionsStats stats={bonusStats} />}
+          {/* {bonusStats.length > 0 && <BonusQuestionsStats stats={bonusStats} />} */}
           {contrarianBets.length > 0 && <ContrarianBets bets={contrarianBets} />}
         </motion.div>
 
