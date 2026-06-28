@@ -64,7 +64,7 @@ export interface ContrarianBet {
   placar_votos: number;
 }
 
-const baseURL = 'http://localhost:3000/api';
+const baseURL = 'https://copadomundoad.onrender.com/api';
 
 export interface PerguntaExtraStats {
   id: number;
