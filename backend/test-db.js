@@ -1,13 +1,17 @@
-const pool = require('./src/config/db');
+const pool = require('./src/config/db.js');
 
-async function run() {
-  const { rows: palpites } = await pool.query("SELECT * FROM palpites WHERE username='fabiano.sales'");
-  console.log('Palpites:', palpites);
-  
-  const { rows: jogos } = await pool.query("SELECT * FROM jogos");
-  console.log('Jogos:', jogos);
-  
-  process.exit(0);
+async function test() {
+  try {
+    const { rows: userBets } = await pool.query("SELECT * FROM palpites WHERE username = 'marcelo.vieira'");
+    console.log("Marcelo Vieira Bets:", userBets);
+    
+    const { rows: games } = await pool.query("SELECT id, time_a, time_b, data_jogo, status FROM jogos ORDER BY data_jogo ASC LIMIT 5");
+    console.log("First 5 Games:", games);
+  } catch(e) {
+    console.error(e);
+  } finally {
+    pool.end();
+  }
 }
 
-run();
+test();

@@ -144,7 +144,7 @@ app.get('/api/palpites/:username', async (req, res) => {
   const { username } = req.params;
 
   try {
-    // Query para pegar os palpites
+    // Query para pegar os palpites (apenas mata-mata)
     const queryPalpites = `
       SELECT 
         p.jogo_id,
@@ -156,19 +156,26 @@ app.get('/api/palpites/:username', async (req, res) => {
         j.data_jogo,
         j.gols_a,
         j.gols_b,
-        j.status
+        j.status,
+        j.fase,
+        j.bandeira_a,
+        j.bandeira_b
       FROM palpites p
       JOIN jogos j ON p.jogo_id = j.id
-      WHERE p.username = $1
+      WHERE p.username = $1 AND j.fase != 'grupos'
       ORDER BY j.data_jogo ASC;
     `;
 
-    // Query para pegar a posição do usuário no ranking global
+    // Query para pegar a posição do usuário no ranking global (Mata-mata)
     const queryPosicao = `
       WITH TodosOsPontos AS (
-          SELECT username, pontos_ganhos, (pontos_ganhos = 5) as is_cravada FROM palpites WHERE processado = true
+          SELECT p.username, p.pontos_ganhos, (p.pontos_ganhos = 5) as is_cravada 
+          FROM palpites p JOIN jogos j ON p.jogo_id = j.id 
+          WHERE p.processado = true AND j.fase != 'grupos'
           UNION ALL
-          SELECT username, pontos_ganhos, false as is_cravada FROM respostas_extras WHERE processada = true
+          SELECT r.username, r.pontos_ganhos, false as is_cravada 
+          FROM respostas_extras r JOIN perguntas_extras pe ON r.pergunta_id = pe.id 
+          WHERE r.processada = true AND pe.fase != 'grupos'
       ),
       Ranking AS (
         SELECT 
@@ -182,7 +189,7 @@ app.get('/api/palpites/:username', async (req, res) => {
       SELECT posicao FROM Ranking WHERE username = $1;
     `;
 
-    // Nova query para buscar as respostas extras
+    // Nova query para buscar as respostas extras (Mata-mata)
     const queryExtras = `
       SELECT 
         r.id,
@@ -196,7 +203,7 @@ app.get('/api/palpites/:username', async (req, res) => {
         p.status
       FROM respostas_extras r
       JOIN perguntas_extras p ON r.pergunta_id = p.id
-      WHERE r.username = $1
+      WHERE r.username = $1 AND p.fase != 'grupos'
       ORDER BY p.id ASC;
     `;
 
@@ -217,6 +224,63 @@ app.get('/api/palpites/:username', async (req, res) => {
   }
 });
 
+// Endpoint para buscar palpites de um usuário específico da FASE DE GRUPOS
+app.get('/api/palpites/:username/grupos', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const queryPalpites = `
+      SELECT 
+        p.jogo_id, j.time_a, j.time_b, p.palpite_a, p.palpite_b, p.pontos_ganhos,
+        j.data_jogo, j.gols_a, j.gols_b, j.status, j.fase, j.bandeira_a, j.bandeira_b
+      FROM palpites p
+      JOIN jogos j ON p.jogo_id = j.id
+      WHERE p.username = $1 AND j.fase = 'grupos'
+      ORDER BY j.data_jogo ASC;
+    `;
+
+    const queryPosicao = `
+      WITH TodosOsPontos AS (
+          SELECT p.username, p.pontos_ganhos, (p.pontos_ganhos = 5) as is_cravada 
+          FROM palpites p JOIN jogos j ON p.jogo_id = j.id 
+          WHERE p.processado = true AND j.fase = 'grupos'
+          UNION ALL
+          SELECT r.username, r.pontos_ganhos, false as is_cravada 
+          FROM respostas_extras r JOIN perguntas_extras pe ON r.pergunta_id = pe.id 
+          WHERE r.processada = true AND pe.fase = 'grupos'
+      ),
+      Ranking AS (
+        SELECT 
+            username, COALESCE(SUM(pontos_ganhos), 0)::int as total_pontos, COUNT(*) FILTER (WHERE is_cravada = true)::int as cravadas,
+            RANK() OVER (ORDER BY COALESCE(SUM(pontos_ganhos), 0) DESC, COUNT(*) FILTER (WHERE is_cravada = true) DESC, username ASC) as posicao
+        FROM TodosOsPontos GROUP BY username
+      )
+      SELECT posicao FROM Ranking WHERE username = $1;
+    `;
+
+    const queryExtras = `
+      SELECT r.id, r.pergunta_id, r.resposta_escolhida, r.pontos_ganhos, r.processada,
+             p.descricao, p.resposta_correta, p.pontos_valendo, p.status
+      FROM respostas_extras r JOIN perguntas_extras p ON r.pergunta_id = p.id
+      WHERE r.username = $1 AND p.fase = 'grupos' ORDER BY p.id ASC;
+    `;
+
+    const { rows: resultados } = await pool.query(queryPalpites, [username.toLowerCase()]);
+    const { rows: rankRows } = await pool.query(queryPosicao, [username.toLowerCase()]);
+    const { rows: palpitesExtras } = await pool.query(queryExtras, [username.toLowerCase()]);
+
+    if (resultados.length === 0) {
+      return res.status(404).json({ message: 'Nenhum palpite encontrado para este usuário na fase de grupos.' });
+    }
+
+    const posicao = rankRows.length > 0 ? parseInt(rankRows[0].posicao, 10) : null;
+    res.status(200).json({ username, posicao, palpites: resultados, palpitesExtras });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao buscar palpites da fase de grupos.' });
+  }
+});
+
 // Endpoint para estatísticas - Trending Games (jogos mais acirrados em votação)
 app.get('/api/stats/trending-games', async (req, res) => {
   try {
@@ -232,7 +296,7 @@ app.get('/api/stats/trending-games', async (req, res) => {
         COALESCE(SUM(CASE WHEN (p.palpite_a = p.palpite_b) THEN 1 ELSE 0 END), 0)::int as votos_empate
       FROM jogos j
       LEFT JOIN palpites p ON j.id = p.jogo_id
-      WHERE j.status IN ('SCHEDULED', 'TIMED')
+      WHERE j.status IN ('SCHEDULED', 'TIMED') AND j.fase != 'grupos'
       GROUP BY j.id, j.time_a, j.time_b, j.data_jogo
       HAVING COUNT(p.id) > 0
       ORDER BY (ABS((COALESCE(SUM(CASE WHEN (p.palpite_a > p.palpite_b) THEN 1 ELSE 0 END), 0) - 
@@ -271,7 +335,7 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
           END as resultado_palpite
         FROM palpites p
         JOIN jogos j ON p.jogo_id = j.id
-        WHERE j.status IN ('SCHEDULED', 'TIMED')
+        WHERE j.status IN ('SCHEDULED', 'TIMED') AND j.fase != 'grupos'
       ),
       result_votes AS (
         SELECT 
@@ -402,20 +466,21 @@ app.get('/api/ranking', async (req, res) => {
     const query = `
       WITH TodosOsPontos AS (
           SELECT 
-              username,
-              pontos_ganhos,
-              (pontos_ganhos = 5) as is_cravada
-          FROM palpites
-          WHERE processado = true
-          
+              p.username,
+              p.pontos_ganhos,
+              (p.pontos_ganhos = 5) as is_cravada
+          FROM palpites p
+          JOIN jogos j ON p.jogo_id = j.id
+          WHERE p.processado = true AND j.fase != 'grupos'
           UNION ALL
           
           SELECT 
-              username,
-              pontos_ganhos,
+              r.username,
+              r.pontos_ganhos,
               false as is_cravada
-          FROM respostas_extras
-          WHERE processada = true
+          FROM respostas_extras r
+          JOIN perguntas_extras pe ON r.pergunta_id = pe.id
+          WHERE r.processada = true AND pe.fase != 'grupos'
       )
       SELECT 
           username,
@@ -445,10 +510,60 @@ app.get('/api/ranking', async (req, res) => {
   }
 });
 
+// Endpoint de Ranking da Fase de Grupos
+app.get('/api/ranking/grupos', async (req, res) => {
+  try {
+    const query = `
+      WITH TodosOsPontos AS (
+          SELECT 
+              p.username,
+              p.pontos_ganhos,
+              (p.pontos_ganhos = 5) as is_cravada
+          FROM palpites p
+          JOIN jogos j ON p.jogo_id = j.id
+          WHERE p.processado = true AND j.fase = 'grupos'
+          
+          UNION ALL
+          
+          SELECT 
+              r.username,
+              r.pontos_ganhos,
+              false as is_cravada
+          FROM respostas_extras r
+          JOIN perguntas_extras pe ON r.pergunta_id = pe.id
+          WHERE r.processada = true AND pe.fase = 'grupos'
+      )
+      SELECT 
+          username,
+          COALESCE(SUM(pontos_ganhos), 0)::int as total_pontos,
+          COUNT(*) FILTER (WHERE is_cravada = true)::int as cravadas
+      FROM TodosOsPontos
+      GROUP BY username
+      ORDER BY 
+          total_pontos DESC,
+          cravadas DESC,
+          username ASC;
+    `;
+    const { rows } = await pool.query(query);
+
+    const ranking = rows.map((r, i) => ({
+      posicao: i + 1,
+      username: r.username,
+      total_pontos: r.total_pontos,
+      cravadas: r.cravadas
+    }));
+
+    res.status(200).json({ ranking });
+  } catch (error) {
+    console.error('Erro ao buscar ranking de grupos:', error);
+    res.status(500).json({ error: 'Erro interno ao carregar o ranking de grupos.' });
+  }
+});
+
 // Endpoint para buscar todos os jogos
 app.get('/api/jogos', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM jogos ORDER BY data_jogo ASC, id ASC');
+    const { rows } = await pool.query("SELECT * FROM jogos WHERE fase != 'grupos' ORDER BY data_jogo ASC, id ASC");
     res.status(200).json({ jogos: rows });
   } catch (error) {
     console.error('Erro ao buscar jogos:', error);
