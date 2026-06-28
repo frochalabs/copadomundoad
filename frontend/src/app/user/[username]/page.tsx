@@ -205,26 +205,27 @@ export default function UserPage() {
             */}
           </div>
           
-          <div className="flex gap-2 sm:ml-auto">
+          {/* Toggle de Fases (Segmented Control Premium) */}
+          <div className="flex bg-[#051020] p-1.5 rounded-xl border border-white/5 shadow-inner w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
             <button
               onClick={() => setSelectedFase("mata-mata")}
-              className={`text-sm font-bold uppercase tracking-wider transition-all px-3 py-1.5 rounded-lg border ${
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs md:text-sm font-black uppercase tracking-widest transition-all duration-300 ${
                 selectedFase === "mata-mata"
-                  ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                  : "bg-transparent border-slate-700/50 text-slate-500 hover:text-slate-300"
+                  ? "bg-slate-800 text-white shadow-md border border-slate-700/50 scale-100"
+                  : "text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95 border border-transparent"
               }`}
             >
               Mata-Mata
             </button>
             <button
               onClick={() => setSelectedFase("grupos")}
-              className={`text-sm font-bold uppercase tracking-wider transition-all px-3 py-1.5 rounded-lg border ${
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-xs md:text-sm font-black uppercase tracking-widest transition-all duration-300 ${
                 selectedFase === "grupos"
-                  ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                  : "bg-transparent border-slate-700/50 text-slate-500 hover:text-slate-300"
+                  ? "bg-slate-800 text-white shadow-md border border-slate-700/50 scale-100"
+                  : "text-slate-500 hover:text-slate-300 hover:bg-white/5 scale-95 border border-transparent"
               }`}
             >
-              Fase de Grupos
+              Grupos
             </button>
           </div>
         </div>

@@ -273,23 +273,23 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-3 bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm text-left"
+              className="mt-4 bg-[#0B1320] border border-white/5 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-5 text-sm text-left shadow-lg"
             >
-              <div className="bg-purple-500/20 p-2 rounded-full shrink-0">
-                <Trophy className="h-5 w-5 text-purple-400" />
+              <div className="bg-[#10B981]/10 p-3 rounded-full shrink-0 border border-[#10B981]/20">
+                <Trophy className="h-6 w-6 text-yellow-500 drop-shadow-md" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-medium text-purple-200 mb-1">O MATA-MATA COMEÇOU!</span>
-                <p className="text-purple-300/80 mb-2">
+              <div className="flex flex-col flex-1">
+                <span className="font-black text-white text-base mb-1 tracking-wider uppercase drop-shadow-sm">O MATA-MATA COMEÇOU!</span>
+                <p className="text-slate-400 mb-3 leading-relaxed">
                   A fase de grupos acabou, mas a emoção continua. Preencha seus palpites para a próxima fase!
                 </p>
                 <a
                   href="https://forms.gle/ekP3j6fEA1aWSTzq5"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[#10B981] hover:text-[#34d399] font-semibold transition-colors w-fit"
+                  className="inline-flex items-center justify-center gap-2 bg-[#10B981] hover:bg-[#059669] text-black font-black uppercase tracking-wider text-xs px-5 py-2.5 rounded-lg transition-transform hover:scale-105 w-fit shadow-md shadow-[#10B981]/20"
                 >
-                  Fazer Palpites do Mata-mata <ArrowRight className="h-4 w-4" />
+                  Fazer Palpites <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
             </motion.div>
