@@ -78,10 +78,12 @@ app.post('/api/palpites', async (req, res) => {
     const jogoIds = palpitesValidos.map(p => p.jogoId);
 
     if (jogoIds.length > 0) {
-      const { rows: jogosInfo } = await client.query('SELECT id, data_jogo FROM jogos WHERE id = ANY($1::int[])', [jogoIds]);
+      const { rows: jogosInfo } = await client.query('SELECT id, data_jogo, fase FROM jogos WHERE id = ANY($1::int[])', [jogoIds]);
       const mapDatas = {};
+      const mapFases = {};
       jogosInfo.forEach(j => {
         mapDatas[j.id] = new Date(j.data_jogo);
+        mapFases[j.id] = j.fase;
       });
 
       // 2. Insere ou atualiza apenas os palpites permitidos
@@ -99,11 +101,12 @@ app.post('/api/palpites', async (req, res) => {
 
       for (const p of palpitesValidos) {
         const dataDoJogo = mapDatas[p.jogoId];
+        const faseDoJogo = mapFases[p.jogoId];
 
         // Regra: Bloqueia se o jogo não existe, ou se já começou (e o usuário não é exceção)
         if (!dataDoJogo) continue;
 
-        if (!temPermissao && agora >= dataDoJogo) {
+        if (faseDoJogo === 'grupos' && !temPermissao && agora >= dataDoJogo) {
           // Ignora o palpite para esse jogo específico porque o prazo já estourou
           continue;
         }
