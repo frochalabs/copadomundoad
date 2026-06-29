@@ -81,13 +81,15 @@ export function BracketMatchCard({ palpite, index }: BracketMatchCardProps) {
         
         {/* TEAM A */}
         <div className={`flex flex-col items-center flex-1 ${teamAEliminated ? 'opacity-40 grayscale' : ''}`}>
-          <div className="w-12 h-8 rounded-sm overflow-hidden border border-white/10 mb-2 shadow-lg">
-            <img 
-              src={palpite.bandeira_a || fallbackFlag} 
-              alt={palpite.time_a} 
-              className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = fallbackFlag; }}
-            />
+          <div className="w-12 h-8 rounded-sm overflow-hidden border border-white/10 mb-2 shadow-lg bg-white/5 flex items-center justify-center">
+            {palpite.time_a !== 'A Definir' && (
+              <img 
+                src={palpite.bandeira_a || fallbackFlag} 
+                alt={palpite.time_a} 
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = fallbackFlag; }}
+              />
+            )}
           </div>
           <span className="font-bold text-[10px] sm:text-xs text-white uppercase tracking-wider text-center truncate w-full max-w-[90px]">
             {palpite.time_a}
@@ -114,13 +116,15 @@ export function BracketMatchCard({ palpite, index }: BracketMatchCardProps) {
 
         {/* TEAM B */}
         <div className={`flex flex-col items-center flex-1 ${teamBEliminated ? 'opacity-40 grayscale' : ''}`}>
-          <div className="w-12 h-8 rounded-sm overflow-hidden border border-white/10 mb-2 shadow-lg">
-            <img 
-              src={palpite.bandeira_b || fallbackFlag} 
-              alt={palpite.time_b} 
-              className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = fallbackFlag; }}
-            />
+          <div className="w-12 h-8 rounded-sm overflow-hidden border border-white/10 mb-2 shadow-lg bg-white/5 flex items-center justify-center">
+            {palpite.time_b !== 'A Definir' && (
+              <img 
+                src={palpite.bandeira_b || fallbackFlag} 
+                alt={palpite.time_b} 
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = fallbackFlag; }}
+              />
+            )}
           </div>
           <span className="font-bold text-[10px] sm:text-xs text-white uppercase tracking-wider text-center truncate w-full max-w-[90px]">
             {palpite.time_b}
