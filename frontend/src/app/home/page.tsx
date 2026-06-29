@@ -271,7 +271,7 @@ export default function Home() {
           className="w-full mt-16 space-y-12"
         >
           {trendingGames.length > 0 && <TrendingGames games={trendingGames} />}
-          {/* {bonusStats.length > 0 && <BonusQuestionsStats stats={bonusStats} />} */}
+          {bonusStats.length > 0 && <BonusQuestionsStats stats={bonusStats} />}
           {contrarianBets.length > 0 && <ContrarianBets bets={contrarianBets} />}
         </motion.div>
 

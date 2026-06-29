@@ -188,7 +188,6 @@ export default function UserPage() {
             >
               Jogos
             </button>
-            {/* 
             <button
               onClick={() => setActiveTab("bonus")}
               className={`text-lg font-bold uppercase tracking-wider transition-all px-4 py-2 rounded-xl flex items-center gap-2 cursor-pointer select-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
@@ -202,7 +201,6 @@ export default function UserPage() {
                 <span className="bg-white/10 text-xs px-2 py-1 rounded-full">{palpitesExtras.length}</span>
               )}
             </button>
-            */}
           </div>
           
           {/* Toggle de Fases (Segmented Control Premium) */}
