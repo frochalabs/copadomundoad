@@ -64,12 +64,12 @@ app.post('/api/palpites', async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    const emailsPermitidos = ["munnik.lessa@adpromotora.com.br"];
+    const emailsPermitidos = [];
     const temPermissao = emailsPermitidos.includes(email.toLowerCase());
     const agora = new Date();
 
     // Filtra palpites inválidos (vazios ou nulos)
-    const palpitesValidos = palpites.filter(p => 
+    const palpitesValidos = palpites.filter(p =>
       p.palpiteA !== null && p.palpiteA !== undefined && p.palpiteA !== '' &&
       p.palpiteB !== null && p.palpiteB !== undefined && p.palpiteB !== ''
     );
@@ -106,7 +106,7 @@ app.post('/api/palpites', async (req, res) => {
         // Regra: Bloqueia se o jogo não existe, ou se já começou (e o usuário não é exceção)
         if (!dataDoJogo) continue;
 
-        if (faseDoJogo === 'grupos' && !temPermissao && agora >= dataDoJogo) {
+        if (!temPermissao && agora >= dataDoJogo) {
           // Ignora o palpite para esse jogo específico porque o prazo já estourou
           continue;
         }
