@@ -37,20 +37,23 @@ const iniciarWorker = () => {
           // Placar fixo para facilitar seu teste: 3x0 para o time da casa
           apiData = {
             status: 'FINISHED',
-            score: { fullTime: { home: 3, away: 0 } }
+            score: { regularTime: { home: 3, away: 0 } }
           };
         } else if (!SIMULAR_JOGO_ID) {
           // Buscando os dados oficiais da API football-data.org (só roda se NÃO estivermos simulando um jogo manualmente)
           try {
             const apiIdClean = String(jogo.api_id).replace(/^\//, '');
             console.log(`[Worker] Consultando API externa para o jogo da API ID ${apiIdClean} (Local: ${jogo.time_a} x ${jogo.time_b})`);
-            const res = await fetch(`https://api.football-data.org/v4/matches/${apiIdClean}`, {
+            const res = await fetch(`https://api.football-data.org/v4/matches/${apiIdClean}/head2head`, {
               headers: { 'X-Auth-Token': process.env.API_KEY || '' }
             });
-            const matchData = await res.json();
-            
-            if (matchData && matchData.id) {
-              apiData = matchData;
+            const h2hData = await res.json();
+
+            if (h2hData && h2hData.matches) {
+              const matchData = h2hData.matches.find(m => String(m.id) === String(apiIdClean));
+              if (matchData) {
+                apiData = matchData;
+              }
             }
           } catch (err) {
             console.error(`[Worker] Falha ao consultar a API para o jogo ${jogo.id}:`, err);
@@ -60,13 +63,24 @@ const iniciarWorker = () => {
         if (apiData && apiData.status === 'FINISHED') {
           // Regra do Bolão: Apenas os 90 minutos + acréscimos!
           // A API manda o placar dos 90 min em "regularTime". Se não existir, usamos o "fullTime" (padrão da fase de grupos).
-          const golsA = apiData.score?.regularTime?.home !== undefined && apiData.score?.regularTime?.home !== null 
-                        ? apiData.score.regularTime.home 
-                        : apiData.score?.fullTime?.home;
-                        
-          const golsB = apiData.score?.regularTime?.away !== undefined && apiData.score?.regularTime?.away !== null 
-                        ? apiData.score.regularTime.away 
-                        : apiData.score?.fullTime?.away;
+          let golsA, golsB;
+          const score = apiData.score;
+          
+          if (score?.duration === 'EXTRA_TIME' || score?.duration === 'PENALTY_SHOOTOUT') {
+            // In knockout stages with extra time/penalties, regularTime MUST be present.
+            // If it is missing, we wait rather than falling back to fullTime.
+            golsA = score?.regularTime?.home;
+            golsB = score?.regularTime?.away;
+          } else {
+            // In group stages (REGULAR duration), regularTime might be null in the API, so we fallback to fullTime.
+            golsA = score?.regularTime?.home !== undefined && score?.regularTime?.home !== null
+              ? score.regularTime.home
+              : score?.fullTime?.home;
+              
+            golsB = score?.regularTime?.away !== undefined && score?.regularTime?.away !== null
+              ? score.regularTime.away
+              : score?.fullTime?.away;
+          }
 
           // Apenas processa se a API já tiver preenchido os gols.
           // Às vezes o status muda para FINISHED antes do placar ser inserido.
