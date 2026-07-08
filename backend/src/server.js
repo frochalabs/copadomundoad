@@ -64,7 +64,7 @@ app.post('/api/palpites', async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    const emailsPermitidos = [];
+    const emailsPermitidos = [""];
     const temPermissao = emailsPermitidos.includes(email.toLowerCase());
     const agora = new Date();
 
@@ -424,6 +424,7 @@ app.get('/api/stats/perguntas-extras', async (req, res) => {
         COUNT(r.id)::int as total_votos
       FROM perguntas_extras p
       LEFT JOIN respostas_extras r ON p.id = r.pergunta_id
+      WHERE p.fase != 'grupos'
       GROUP BY p.id, r.resposta_escolhida
       ORDER BY p.id DESC;
     `;
@@ -460,6 +461,68 @@ app.get('/api/stats/perguntas-extras', async (req, res) => {
   } catch (error) {
     console.error('Erro em stats/perguntas-extras:', error);
     res.status(500).json({ error: 'Erro ao buscar estatísticas de perguntas extras.' });
+  }
+});
+
+// Endpoint para estatísticas apenas das Perguntas Extras Ativas
+app.get('/api/stats/perguntas-ativas', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        p.id,
+        p.descricao,
+        p.status,
+        p.opcoes,
+        r.resposta_escolhida,
+        COUNT(r.id)::int as total_votos
+      FROM perguntas_extras p
+      LEFT JOIN respostas_extras r ON p.id = r.pergunta_id
+      WHERE p.status = 'ABERTA'
+      GROUP BY p.id, r.resposta_escolhida
+      ORDER BY p.id DESC;
+    `;
+    const { rows } = await pool.query(query);
+
+    const questionsMap = {};
+    rows.forEach(row => {
+      if (!questionsMap[row.id]) {
+        questionsMap[row.id] = {
+          id: row.id,
+          descricao: row.descricao,
+          status: row.status,
+          total_respostas: 0,
+          ranking: []
+        };
+        if (Array.isArray(row.opcoes)) {
+          questionsMap[row.id].ranking = row.opcoes.map(opcao => ({
+            opcao,
+            votos: 0,
+            percentage: 0
+          }));
+        }
+      }
+
+      if (row.resposta_escolhida) {
+        const optionItem = questionsMap[row.id].ranking.find(o => o.opcao === row.resposta_escolhida);
+        if (optionItem) {
+          optionItem.votos = row.total_votos;
+        }
+        questionsMap[row.id].total_respostas += row.total_votos;
+      }
+    });
+
+    const result = Object.values(questionsMap).map(q => {
+      q.ranking.forEach(r => {
+        r.percentage = q.total_respostas > 0 ? Math.round((r.votos / q.total_respostas) * 100) : 0;
+      });
+      q.ranking.sort((a, b) => b.votos - a.votos);
+      return q;
+    });
+
+    res.status(200).json({ perguntasAtivasStats: result });
+  } catch (error) {
+    console.error('Erro em stats/perguntas-ativas:', error);
+    res.status(500).json({ error: 'Erro ao buscar estatísticas ativas.' });
   }
 });
 
