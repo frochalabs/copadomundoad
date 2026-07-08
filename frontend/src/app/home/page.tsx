@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Search, Loader2, AlertCircle, ArrowRight, Trophy, Crown } from "lucide-react";
-import { fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, fetchPerguntasExtrasStats, fetchRankingGrupos, TrendingGame, ContrarianBet, PerguntaExtraStats, RankingItem } from "@/lib/api";
+import { fetchUserPalpites, fetchTrendingGames, fetchContrarianBets, fetchPerguntasAtivasStats, TrendingGame, ContrarianBet, PerguntaAtivaStats } from "@/lib/api";
 import { TrendingGames } from "@/components/TrendingGames";
-import { WinnersDashboard } from "@/components/WinnersDashboard";
 import { ContrarianBets } from "@/components/ContrarianBets";
 import { BonusQuestionsStats } from "@/components/BonusQuestionsStats";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -33,8 +32,7 @@ export default function Home() {
 
   const [trendingGames, setTrendingGames] = useState<TrendingGame[]>([]);
   const [contrarianBets, setContrarianBets] = useState<ContrarianBet[]>([]);
-  const [bonusStats, setBonusStats] = useState<PerguntaExtraStats[]>([]);
-  const [topUsers, setTopUsers] = useState<RankingItem[]>([]);
+  const [bonusStats, setBonusStats] = useState<PerguntaAtivaStats[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [loadingPhraseIndex, setLoadingPhraseIndex] = useState(0);
 
@@ -53,17 +51,15 @@ export default function Home() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const [gamesRes, betsRes, bonusRes, rankingRes] = await Promise.all([
+        const [gamesRes, betsRes, bonusRes] = await Promise.all([
           fetchTrendingGames(),
           fetchContrarianBets(),
-          fetchPerguntasExtrasStats(),
-          fetchRankingGrupos(),
+          fetchPerguntasAtivasStats(),
           new Promise(r => setTimeout(r, 1500)) // Garante pelo menos 1.5s de tela de loading
         ]);
         setTrendingGames(gamesRes.trendingGames);
         setContrarianBets(betsRes.contrarianBets);
-        setBonusStats(bonusRes.perguntasExtrasStats);
-        setTopUsers(rankingRes.ranking.slice(0, 5));
+        setBonusStats(bonusRes.perguntasAtivasStats);
       } catch (err) {
         console.error("Erro ao carregar estatísticas:", err);
       } finally {
@@ -259,9 +255,6 @@ export default function Home() {
             </motion.div>
           </div>
         </motion.div>
-
-        {/* Section: Vencedores da Fase de Grupos */}
-        <WinnersDashboard topUsers={topUsers} />
 
         {/* Stats Section - Visible always */}
         <motion.div

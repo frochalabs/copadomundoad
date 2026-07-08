@@ -76,6 +76,18 @@ export interface PerguntaExtraStats {
   distribuicao: Record<string, number>;
 }
 
+export interface PerguntaAtivaStats {
+  id: number;
+  descricao: string;
+  status: string;
+  total_respostas: number;
+  ranking: {
+    opcao: string;
+    votos: number;
+    percentage: number;
+  }[];
+}
+
 export async function fetchUserPalpites(username: string): Promise<ApiResponse> {
   const res = await fetch(`${baseURL}/palpites/${username}`);
 
@@ -147,6 +159,16 @@ export async function fetchPerguntasExtrasStats(): Promise<{ perguntasExtrasStat
 
   if (!res.ok) {
     throw new Error('Erro ao buscar estatísticas de perguntas extras');
+  }
+
+  return res.json();
+}
+
+export async function fetchPerguntasAtivasStats(): Promise<{ perguntasAtivasStats: PerguntaAtivaStats[] }> {
+  const res = await fetch(`${baseURL}/stats/perguntas-ativas`);
+
+  if (!res.ok) {
+    throw new Error('Erro ao buscar estatísticas de perguntas ativas');
   }
 
   return res.json();
