@@ -29,6 +29,7 @@ export default function UserPage() {
     { id: 'LAST_16', label: 'Oitavas de Final', count: 8 },
     { id: 'QUARTER_FINALS', label: 'Quartas de Final', count: 4 },
     { id: 'SEMI_FINALS', label: 'Semifinais', count: 2 },
+    { id: 'THIRD_PLACE', label: 'Disputa de 3º Lugar', count: 1 },
     { id: 'FINAL', label: 'Final', count: 1 }
   ];
   const [currentPage, setCurrentPage] = useState(1);
