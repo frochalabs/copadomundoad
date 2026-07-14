@@ -64,7 +64,7 @@ app.post('/api/palpites', async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    const emailsPermitidos = [""];
+    const emailsPermitidos = ["raniele.santos@adpromotora.com.br"];
     const temPermissao = emailsPermitidos.includes(email.toLowerCase());
     const agora = new Date();
 
@@ -452,8 +452,10 @@ app.get('/api/stats/perguntas-extras', async (req, res) => {
       }
 
       if (row.resposta_escolhida) {
-        questionsMap[row.id].distribuicao[row.resposta_escolhida] = row.total_votos;
-        questionsMap[row.id].total_respostas += row.total_votos;
+        if (questionsMap[row.id].distribuicao[row.resposta_escolhida] !== undefined) {
+          questionsMap[row.id].distribuicao[row.resposta_escolhida] = row.total_votos;
+          questionsMap[row.id].total_respostas += row.total_votos;
+        }
       }
     });
 
@@ -506,8 +508,8 @@ app.get('/api/stats/perguntas-ativas', async (req, res) => {
         const optionItem = questionsMap[row.id].ranking.find(o => o.opcao === row.resposta_escolhida);
         if (optionItem) {
           optionItem.votos = row.total_votos;
+          questionsMap[row.id].total_respostas += row.total_votos;
         }
-        questionsMap[row.id].total_respostas += row.total_votos;
       }
     });
 
