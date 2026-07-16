@@ -1,3 +1,9 @@
+/**
+ * @file server.js
+ * @description Main backend server for the Bolão da Copa AD application.
+ * Manages API routes for user predictions, statistics, global rankings, 
+ * and database integration (PostgreSQL).
+ */
 const express = require('express');
 const cors = require('cors');
 const pool = require('./config/db');
@@ -8,15 +14,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Inicializa as tabelas antes de abrir o servidor
 initDatabase();
 
-// Inicia o motor de polling (Cron Job)
 iniciarWorker();
 
-// Endpoint para cadastrar ou atualizar múltiplos jogos (carga inicial da API)
 app.post('/api/jogos/seed', async (req, res) => {
-  const { jogos } = req.body; // Array de objetos contendo os dados dos jogos
+  const { jogos } = req.body; 
 
   if (!Array.isArray(jogos) || jogos.length === 0) {
     return res.status(400).json({ error: 'Formato de dados inválido ou lista vazia.' });
@@ -35,10 +38,10 @@ app.post('/api/jogos/seed', async (req, res) => {
   try {
     for (const jogo of jogos) {
       await pool.query(query, [
-        jogo.id, // ID Oficial da API de Futebol
+        jogo.id, 
         jogo.time_a,
         jogo.time_b,
-        jogo.data_jogo, // Formato YYYY-MM-DD HH:MM:SS
+        jogo.data_jogo, 
         jogo.status || 'SCHEDULED'
       ]);
     }
@@ -49,7 +52,6 @@ app.post('/api/jogos/seed', async (req, res) => {
   }
 });
 
-// Endpoint para receber os palpites consolidados do n8n
 app.post('/api/palpites', async (req, res) => {
   const { email, palpites } = req.body;
 
@@ -68,13 +70,11 @@ app.post('/api/palpites', async (req, res) => {
     const temPermissao = emailsPermitidos.includes(email.toLowerCase());
     const agora = new Date();
 
-    // Filtra palpites inválidos (vazios ou nulos)
     const palpitesValidos = palpites.filter(p =>
       p.palpiteA !== null && p.palpiteA !== undefined && p.palpiteA !== '' &&
       p.palpiteB !== null && p.palpiteB !== undefined && p.palpiteB !== ''
     );
 
-    // 1. Busca todos os jogos enviados para validar o horário individualmente
     const jogoIds = palpitesValidos.map(p => p.jogoId);
 
     if (jogoIds.length > 0) {
@@ -86,7 +86,6 @@ app.post('/api/palpites', async (req, res) => {
         mapFases[j.id] = j.fase;
       });
 
-      // 2. Insere ou atualiza apenas os palpites permitidos
       const upsertQuery = `
         INSERT INTO palpites (email, username, jogo_id, palpite_a, palpite_b)
         VALUES ($1, $2, $3, $4, $5)
@@ -103,11 +102,10 @@ app.post('/api/palpites', async (req, res) => {
         const dataDoJogo = mapDatas[p.jogoId];
         const faseDoJogo = mapFases[p.jogoId];
 
-        // Regra: Bloqueia se o jogo não existe, ou se já começou (e o usuário não é exceção)
         if (!dataDoJogo) continue;
 
         if (!temPermissao && agora >= dataDoJogo) {
-          // Ignora o palpite para esse jogo específico porque o prazo já estourou
+          
           continue;
         }
 
@@ -115,7 +113,6 @@ app.post('/api/palpites', async (req, res) => {
         palpitesProcessados++;
       }
 
-      // Se nenhum palpite pôde ser processado (todos atrasados) e o usuário mandou palpites
       if (palpitesProcessados === 0 && palpitesValidos.length > 0) {
         await client.query('ROLLBACK');
         return res.status(403).json({ error: 'Todos os jogos enviados já começaram. Prazo encerrado para estes palpites.' });
@@ -142,12 +139,11 @@ app.post('/api/palpites', async (req, res) => {
   }
 });
 
-// Endpoint para buscar palpites de um usuário específico
 app.get('/api/palpites/:username', async (req, res) => {
   const { username } = req.params;
 
   try {
-    // Query para pegar os palpites (apenas mata-mata)
+    
     const queryPalpites = `
       SELECT 
         p.jogo_id,
@@ -169,7 +165,6 @@ app.get('/api/palpites/:username', async (req, res) => {
       ORDER BY j.data_jogo ASC;
     `;
 
-    // Query para pegar a posição do usuário no ranking global (Mata-mata)
     const queryPosicao = `
       WITH TodosOsPontos AS (
           SELECT p.username, p.pontos_ganhos, (p.pontos_ganhos = 5) as is_cravada 
@@ -192,7 +187,6 @@ app.get('/api/palpites/:username', async (req, res) => {
       SELECT posicao FROM Ranking WHERE username = $1;
     `;
 
-    // Nova query para buscar as respostas extras (Mata-mata)
     const queryExtras = `
       SELECT 
         r.id,
@@ -227,7 +221,6 @@ app.get('/api/palpites/:username', async (req, res) => {
   }
 });
 
-// Endpoint para buscar palpites de um usuário específico da FASE DE GRUPOS
 app.get('/api/palpites/:username/grupos', async (req, res) => {
   const { username } = req.params;
 
@@ -284,7 +277,6 @@ app.get('/api/palpites/:username/grupos', async (req, res) => {
   }
 });
 
-// Endpoint para estatísticas - Trending Games (jogos mais acirrados em votação)
 app.get('/api/stats/trending-games', async (req, res) => {
   try {
     const query = `
@@ -317,7 +309,6 @@ app.get('/api/stats/trending-games', async (req, res) => {
   }
 });
 
-// Endpoint para estatísticas - Contrarian Bets (palpites zebra)
 app.get('/api/stats/contrarian-bets', async (req, res) => {
   try {
     const query = `
@@ -410,7 +401,6 @@ app.get('/api/stats/contrarian-bets', async (req, res) => {
   }
 });
 
-// Endpoint para estatísticas de Perguntas Extras
 app.get('/api/stats/perguntas-extras', async (req, res) => {
   try {
     const query = `
@@ -430,7 +420,6 @@ app.get('/api/stats/perguntas-extras', async (req, res) => {
     `;
     const { rows } = await pool.query(query);
 
-    // Grouping by question id
     const questionsMap = {};
     rows.forEach(row => {
       if (!questionsMap[row.id]) {
@@ -443,7 +432,7 @@ app.get('/api/stats/perguntas-extras', async (req, res) => {
           total_respostas: 0,
           distribuicao: {}
         };
-        // Inicializa opções com 0
+        
         if (Array.isArray(row.opcoes)) {
           row.opcoes.forEach(op => {
             questionsMap[row.id].distribuicao[op] = 0;
@@ -466,7 +455,6 @@ app.get('/api/stats/perguntas-extras', async (req, res) => {
   }
 });
 
-// Endpoint para estatísticas apenas das Perguntas Extras Ativas
 app.get('/api/stats/perguntas-ativas', async (req, res) => {
   try {
     const query = `
@@ -528,7 +516,6 @@ app.get('/api/stats/perguntas-ativas', async (req, res) => {
   }
 });
 
-// Endpoint de Ranking Completo
 app.get('/api/ranking', async (req, res) => {
   try {
     const query = `
@@ -563,7 +550,6 @@ app.get('/api/ranking', async (req, res) => {
     `;
     const { rows } = await pool.query(query);
 
-    // Formatar com posição
     const ranking = rows.map((r, i) => ({
       posicao: i + 1,
       username: r.username,
@@ -578,7 +564,6 @@ app.get('/api/ranking', async (req, res) => {
   }
 });
 
-// Endpoint de Ranking da Fase de Grupos
 app.get('/api/ranking/grupos', async (req, res) => {
   try {
     const query = `
@@ -628,7 +613,6 @@ app.get('/api/ranking/grupos', async (req, res) => {
   }
 });
 
-// Endpoint para buscar todos os jogos
 app.get('/api/jogos', async (req, res) => {
   try {
     const { rows } = await pool.query("SELECT * FROM jogos WHERE fase != 'grupos' ORDER BY data_jogo ASC, id ASC");
@@ -639,17 +623,14 @@ app.get('/api/jogos', async (req, res) => {
   }
 });
 
-// Endpoint para excluir um jogo (e seus palpites associados para não quebrar a Foreign Key)
 app.delete('/api/jogos/:id', async (req, res) => {
   const { id } = req.params;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Exclui primeiro os palpites daquele jogo
     await client.query('DELETE FROM palpites WHERE jogo_id = $1', [id]);
 
-    // Depois exclui o jogo
     const { rowCount } = await client.query('DELETE FROM jogos WHERE id = $1', [id]);
 
     if (rowCount === 0) {
@@ -668,8 +649,6 @@ app.delete('/api/jogos/:id', async (req, res) => {
   }
 });
 
-// Endpoint de Administração: Sincronizar Jogos com a API Externa
-// Isso irá adicionar o api_id e corrigir a data_jogo usando o utcDate oficial.
 const { syncJogos } = require('./scripts/syncJogosApi');
 app.post('/api/admin/sync-games', async (req, res) => {
   try {
@@ -681,7 +660,6 @@ app.post('/api/admin/sync-games', async (req, res) => {
   }
 });
 
-// Endpoint para adicionar múltiplos jogos manualmente (em lote)
 app.post('/api/jogos', async (req, res) => {
   const { jogos } = req.body;
 
@@ -693,7 +671,6 @@ app.post('/api/jogos', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Como sua tabela não usa SERIAL, calculamos o próximo ID sequencial a partir do maior existente
     const { rows: maxIdRow } = await client.query('SELECT COALESCE(MAX(id), 1000) as max_id FROM jogos');
     let proximoId = parseInt(maxIdRow[0].max_id, 10) + 1;
 
@@ -720,7 +697,6 @@ app.post('/api/jogos', async (req, res) => {
         gols_b !== undefined ? gols_b : null
       ]);
 
-      // Só incrementa o proximoId e adiciona aos inseridos se ele realmente gravou no banco (não foi ignorado)
       if (rows.length > 0) {
         inseridos.push(rows[0]);
         proximoId++;
@@ -744,7 +720,6 @@ app.post('/api/jogos', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Endpoint para buscar perguntas extras ativas
 app.get('/api/perguntas-ativas', async (req, res) => {
   try {
     const { rows } = await pool.query("SELECT * FROM perguntas_extras WHERE status = 'ABERTA' ORDER BY id ASC");
@@ -755,7 +730,6 @@ app.get('/api/perguntas-ativas', async (req, res) => {
   }
 });
 
-// Endpoint para enviar um palpite de pergunta extra
 app.post('/api/palpites-extras', async (req, res) => {
   const { email, pergunta_id, resposta } = req.body;
 
@@ -766,7 +740,7 @@ app.post('/api/palpites-extras', async (req, res) => {
   const username = email.split('@')[0].toLowerCase();
 
   try {
-    // Verifica se a pergunta ainda está aberta
+    
     const { rows: pergunta } = await pool.query('SELECT status FROM perguntas_extras WHERE id = $1', [pergunta_id]);
     if (pergunta.length === 0 || pergunta[0].status !== 'ABERTA') {
       return res.status(403).json({ error: 'Esta pergunta não está mais aceitando respostas.' });
@@ -787,7 +761,6 @@ app.post('/api/palpites-extras', async (req, res) => {
   }
 });
 
-// Endpoint de Administração: Criar uma nova pergunta especial
 app.post('/api/admin/criar-pergunta', async (req, res) => {
   const { descricao, opcoes, pontos_valendo, jogo_id } = req.body;
 
@@ -815,7 +788,6 @@ app.post('/api/admin/criar-pergunta', async (req, res) => {
   }
 });
 
-// Endpoint de Administração: Resolver Pergunta Especial Manualmente
 app.post('/api/admin/resolver-pergunta', async (req, res) => {
   const { pergunta_id, resposta_correta } = req.body;
 
@@ -828,7 +800,6 @@ app.post('/api/admin/resolver-pergunta', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // 1. Atualiza a tabela da pergunta dizendo qual foi o resultado oficial
     const queryPergunta = `
       UPDATE perguntas_extras 
       SET resposta_correta = $1, status = 'PROCESSADA'
@@ -844,7 +815,6 @@ app.post('/api/admin/resolver-pergunta', async (req, res) => {
 
     const pontosDaPergunta = resultPergunta[0].pontos_valendo;
 
-    // 2. Dá os pontos para quem ACERTOU
     const queryAcertos = `
       UPDATE respostas_extras 
       SET pontos_ganhos = $1, processada = true
@@ -852,7 +822,6 @@ app.post('/api/admin/resolver-pergunta', async (req, res) => {
     `;
     const { rowCount: acertos } = await client.query(queryAcertos, [pontosDaPergunta, pergunta_id, resposta_correta]);
 
-    // 3. Zera os pontos de quem ERROU
     const queryErros = `
       UPDATE respostas_extras 
       SET pontos_ganhos = 0, processada = true
